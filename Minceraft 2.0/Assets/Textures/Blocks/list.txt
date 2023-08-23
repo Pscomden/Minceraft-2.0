@@ -1,0 +1,14 @@
+slot
+selected_slot
+cross_hair
+break1
+break2
+break3
+break4
+dirt
+grass
+grass_side
+stone
+log_side
+log_top
+leaves

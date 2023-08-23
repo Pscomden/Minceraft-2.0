@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{6a1342de-969c-4701-bb20-d0b5c460599d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{1aca8d4a-d0f7-4afb-9f32-09def086f6eb}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Include.h" />
+    <ClInclude Include="src\Game.h" />
+    <ClInclude Include="src\World\ChunkManager.h" />
+    <ClInclude Include="src\Window\Shader.h" />
+    <ClInclude Include="src\Window\Window.h" />
+    <ClInclude Include="src\Window\Input.h" />
+    <ClInclude Include="src\Render\Renderer.h" />
+    <ClInclude Include="src\Render\Mesh\Mesh.h" />
+    <ClInclude Include="src\Window\TextureAtlas.h" />
+    <ClInclude Include="src\Render\Camera.h" />
+    <ClInclude Include="src\Entity\Entity.h" />
+    <ClInclude Include="src\Entity\Player.h" />
+    <ClInclude Include="src\InputHandler.h" />
+    <ClInclude Include="src\Render\Mesh\ChunkMesh.h" />
+    <ClInclude Include="src\Assets\BlockTypes.h" />
+    <ClInclude Include="src\Render\ChunkRenderer.h" />
+    <ClInclude Include="src\Physics\Ray.h" />
+    <ClInclude Include="src\Constants.h" />
+    <ClInclude Include="src\Render\UIRenderer.h" />
+    <ClInclude Include="src\Entity\Inventory.h" />
+    <ClInclude Include="src\Assets\Item.h" />
+    <ClInclude Include="src\Render\Mesh\BasicMesh.h" />
+    <ClInclude Include="src\Physics\Shape.h" />
+    <ClInclude Include="src\Render\DebugRenderer.h" />
+    <ClInclude Include="src\Render\Mesh\LineMesh.h" />
+    <ClInclude Include="src\World\Block.h" />
+    <ClInclude Include="src\World\Chunk.h" />
+    <ClInclude Include="src\Render\ChunkMeshBuilder.h" />
+    <ClInclude Include="src\Render\TextRenderer.h" />
+    <ClInclude Include="src\World\World.h" />
+    <ClInclude Include="src\Render\Frustrum.h" />
+    <ClInclude Include="src\Render\EntityRenderer.h" />
+    <ClInclude Include="src\Render\Mesh\ObjectMesh.h" />
+    <ClInclude Include="src\Debug\Command.h" />
+    <ClInclude Include="src\Menu\Button.h" />
+    <ClInclude Include="src\Render\Mesh\CubeMap.h" />
+    <ClInclude Include="src\Render\SkyboxRenderer.h" />
+    <ClInclude Include="src\World\WorldBuilder.h" />
+    <ClInclude Include="src\World\Structure.h" />
+    <ClInclude Include="src\ThreadPool.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Main.cpp" />
+    <ClCompile Include="src\Game.cpp" />
+    <ClCompile Include="src\Window\Shader.cpp" />
+    <ClCompile Include="src\Window\Window.cpp" />
+    <ClCompile Include="..\vender\glad.c" />
+    <ClCompile Include="src\Window\Input.cpp" />
+    <ClCompile Include="src\Render\Renderer.cpp" />
+    <ClCompile Include="src\Window\TextureAtlas.cpp" />
+    <ClCompile Include="src\Render\Camera.cpp" />
+    <ClCompile Include="src\Entity\Player.cpp" />
+    <ClCompile Include="src\InputHandler.cpp" />
+    <ClCompile Include="src\Entity\Entity.cpp" />
+    <ClCompile Include="src\World\ChunkManager.cpp" />
+    <ClCompile Include="src\Assets\BlockTypes.cpp" />
+    <ClCompile Include="src\Render\Mesh\ChunkMesh.cpp" />
+    <ClCompile Include="src\Render\ChunkRenderer.cpp" />
+    <ClCompile Include="src\Physics\Ray.cpp" />
+    <ClCompile Include="src\Render\UIRenderer.cpp" />
+    <ClCompile Include="src\Entity\Inventory.cpp" />
+    <ClCompile Include="src\Assets\Item.cpp" />
+    <ClCompile Include="src\Render\Mesh\BasicMesh.cpp" />
+    <ClCompile Include="src\Render\Mesh\LineMesh.cpp" />
+    <ClCompile Include="src\Render\DebugRenderer.cpp" />
+    <ClCompile Include="src\Render\ChunkMeshBuilder.cpp" />
+    <ClCompile Include="src\Render\TextRenderer.cpp" />
+    <ClCompile Include="src\World\World.cpp" />
+    <ClCompile Include="src\Render\EntityRenderer.cpp" />
+    <ClCompile Include="src\Render\Mesh\ObjectMesh.cpp" />
+    <ClCompile Include="src\Debug\Command.cpp" />
+    <ClCompile Include="src\Render\Mesh\CubeMap.cpp" />
+    <ClCompile Include="src\Render\SkyboxRenderer.cpp" />
+    <ClCompile Include="src\stb_image.cpp" />
+    <ClCompile Include="src\World\WorldBuilder.cpp" />
+    <ClCompile Include="src\World\Structure.cpp" />
+    <ClCompile Include="src\ThreadPool.cpp" />
+  </ItemGroup>
+</Project>

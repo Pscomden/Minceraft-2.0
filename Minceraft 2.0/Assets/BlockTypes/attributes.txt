@@ -1,0 +1,40 @@
+grass
+id 1
+drops dirt
+solid 1
+harvest 1
+tool shovel
+toughness 3
+;
+dirt
+id 2
+drops dirt
+solid 1
+harvest 2
+tool pickaxe
+toughness 10
+;
+stone
+id 3
+drops stone
+solid 1
+harvest 1
+tool shovel
+toughness 2
+;
+log
+id 4
+drops log
+solid 1
+harvest 1
+tool axe
+toughness 4
+;
+leaves
+id 5
+drops leaves
+solid 1
+harvest 1
+tool axe
+toughness 1
+;
