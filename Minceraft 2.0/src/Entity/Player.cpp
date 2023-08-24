@@ -1,8 +1,8 @@
 #include "Player.h"
 
 Player::Player(glm::vec3 pos) : inv(36), cursor_item(0, 0), Entity(pos) {
-	//size = glm::vec3(0.75f, 1.8f, 0.75f);
-	size = glm::vec3(1.5f, 3.6f, 1.5f);
+	size = glm::vec3(0.75f, 1.8f, 0.75f);
+	//size = glm::vec3(1.5f, 3.6f, 1.5f);
 	ray = nullptr;
 	facing_block = false;
 	inside_block = false;

@@ -13,5 +13,6 @@ namespace World {
 	std::vector<std::shared_ptr<Entity>>* getEntities();
 	void setHorizontalRange(int range);
 	void setVerticalRange(int range);
+	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit);
 	glm::ivec3 getRange();
 }
