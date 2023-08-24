@@ -2,8 +2,12 @@
 
 namespace World {
 
+	// how much a player can see
 	static int horizontal_range;
 	static int vertical_range;
+	// how far a player can explore
+	static glm::ivec3 start_limit;
+	static glm::ivec3 end_limit;
 	static int seed;
 	static std::string world_directory;
 	static bool cubic_chunks;
@@ -12,8 +16,9 @@ namespace World {
 
 	void start(std::string world_directory) {
 		// TODO: load from settings
-		horizontal_range = 9;
-		vertical_range = 5;
+		horizontal_range = 50;
+		vertical_range = 8;
+		setLimit(glm::ivec3(0, 0, 0), glm::ivec3(1, 1, 1));
 		seed = 10;
 		World::world_directory = world_directory;
 		cubic_chunks = true;
@@ -70,6 +75,12 @@ namespace World {
 	void setVerticalRange(int range) {
 		vertical_range = range;
 		ChunkManager::setRange(horizontal_range, vertical_range);
+	}
+
+	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit) {
+		World::start_limit = start_limit;
+		World::end_limit = end_limit;
+		ChunkManager::setLimit(start_limit, end_limit);
 	}
 
 	glm::ivec3 getRange() {

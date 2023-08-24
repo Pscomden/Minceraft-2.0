@@ -13,6 +13,7 @@ namespace ChunkManager {
 	void update(glm::ivec3 player_pos);
 	void genWorld(glm::ivec3 player_pos);
 	void setRange(int horizontal_range, int vertical_range);
+	void setLimit(glm::ivec3 start_limit, glm::ivec3 endt_limit);
 	void setSeed(int seed);
 	void setWorldDirectory(std::string world_directory);
 	void setCubicChunks(bool cubic_chunks);

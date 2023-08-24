@@ -10,6 +10,8 @@ namespace ChunkManager {
 	static glm::ivec3 player_chunk_pos;
 	static int horizontal_range;
 	static int vertical_range;
+	static glm::ivec3 start_limit;
+	static glm::ivec3 end_limit;
 	static int seed;
 	static std::string world_directory;
 	static bool first_frame;
@@ -46,6 +48,15 @@ namespace ChunkManager {
 			serialize(chunk);
 		}
 		chunk->state = Chunk::State::DELETING;
+	}
+
+	bool inWorldLimit(glm::ivec3 chunk_pos) {
+		return (chunk_pos.x >= start_limit.x &&
+				chunk_pos.y >= start_limit.y &&
+				chunk_pos.z >= start_limit.z &&
+				chunk_pos.x <= end_limit.x &&
+				chunk_pos.y <= end_limit.y &&
+				chunk_pos.x <= end_limit.z);
 	}
 
 	bool inRange(glm::ivec3 chunk_pos, glm::ivec3 player_pos) {
@@ -151,7 +162,7 @@ namespace ChunkManager {
 				if (!cubic_chunks) {
 					glm::ivec3 pos = glm::ivec3(x, 0, y) + chunk_pos;
 					pos.y = 0;
-					if (!chunkExists(pos) && !poolChunkExists(pos)) {
+					if (!chunkExists(pos) && !poolChunkExists(pos) && inWorldLimit(pos)) {
 						empty_chunks.push(pos);
 					}
 				}
@@ -159,7 +170,7 @@ namespace ChunkManager {
 					int medium = chunk_pos.y;
 					glm::ivec3 pos = glm::ivec3(x + chunk_pos.x, chunk_pos.y, y + chunk_pos.z);
 					for (int j = 0; j < vertical_range; j++) {
-						if (!chunkExists(pos) && !poolChunkExists(pos)) {
+						if (!chunkExists(pos) && !poolChunkExists(pos) && inWorldLimit(pos)) {
 							empty_chunks.push(pos);
 						}
 						if (pos.y == chunk_pos.y) {
@@ -234,6 +245,14 @@ namespace ChunkManager {
 	void setRange(int horizontal_range, int vertical_range) {
 		ChunkManager::horizontal_range = horizontal_range;
 		ChunkManager::vertical_range = vertical_range;
+	}
+
+	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit) {
+		ChunkManager::start_limit = start_limit;
+		ChunkManager::end_limit = end_limit;
+		ChunkManager::deleteEmptyChunks(player_chunk_pos);
+		ChunkManager::findEmptyChunks(player_chunk_pos);
+		ChunkManager::createChunks();
 	}
 
 	void setSeed(int seed) {
