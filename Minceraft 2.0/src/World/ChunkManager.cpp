@@ -56,7 +56,7 @@ namespace ChunkManager {
 				chunk_pos.z >= start_limit.z &&
 				chunk_pos.x <= end_limit.x &&
 				chunk_pos.y <= end_limit.y &&
-				chunk_pos.x <= end_limit.z);
+				chunk_pos.z <= end_limit.z);
 	}
 
 	bool inRange(glm::ivec3 chunk_pos, glm::ivec3 player_pos) {

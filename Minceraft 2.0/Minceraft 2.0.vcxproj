@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Debug\Command.h" />
+    <ClInclude Include="src\Debug\Console.h" />
     <ClInclude Include="src\Menu\Button.h" />
     <ClInclude Include="src\Render\EntityRenderer.h" />
     <ClInclude Include="src\Render\Frustrum.h" />

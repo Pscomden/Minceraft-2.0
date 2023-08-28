@@ -25,7 +25,7 @@ Player::~Player() {
 void Player::update(float delta_time) {
 	switch (mode) {
 	case Mode::SURVIVAL:
-		moveSurvival();
+		moveSurvival(delta_time);
 		break;
 	case Mode::GOD:
 		moveGod();
@@ -147,8 +147,20 @@ Player::Mode Player::getMode() {
 	return mode;
 }
 
-void Player::moveSurvival() {
+void Player::moveSurvival(float delta_time) {
+	const float INITIAL_JUMP = 9.907;
+	if (direction.y > 0 && on_ground) {
+		velocity.y = INITIAL_JUMP;
+		std::cout << "here";
+	}
 
+	velocity.x += direction.x * delta_time * 2.0f;
+	velocity.z += direction.z * delta_time * 2.0f;
+	// do fall
+	velocity.y -= GRAVITY_ACCEL * delta_time;
+	if (on_ground) {
+		velocity.y = 0.0f;
+	}
 }
 
 void Player::moveGod() {

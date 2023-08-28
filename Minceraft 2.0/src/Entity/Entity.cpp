@@ -54,6 +54,7 @@ void Entity::move(glm::vec3 direction) {
 }
 
 void Entity::checkCollision(glm::vec3 distance) {
+	on_ground = false;
 	glm::vec3 new_pos = pos + distance;
 	rigid_body.changePos(new_pos);
 	std::vector<Rectangle> cube_hitboxes;
@@ -87,12 +88,21 @@ void Entity::checkCollision(glm::vec3 distance) {
 	// Y
 	new_pos.y += distance.y;
 	rigid_body.changePos(new_pos);
+
+	// Notes; this is true because top condition which is just vector + velocity stops on_ground
+	on_ground = false;
+	std::cout << "start: " << on_ground << "\n";
 	for (const Rectangle& rect : cube_hitboxes) {
 		if (rigid_body.rectIntersects(rect)) {
 			new_pos.y = pos.y;
+			if (rect.pos.y < new_pos.y) {
+				on_ground = true;
+				Console::printVector("caadr", pos);
+			}
 			break;
 		}
 	}
+	std::cout << "end: " << on_ground << "\n";
 	// Z
 	new_pos.z += distance.z;
 	rigid_body.changePos(new_pos);

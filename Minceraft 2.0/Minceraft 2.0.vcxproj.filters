@@ -49,6 +49,7 @@
     <ClInclude Include="src\World\WorldBuilder.h" />
     <ClInclude Include="src\World\Structure.h" />
     <ClInclude Include="src\ThreadPool.h" />
+    <ClInclude Include="src\Debug\Console.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Main.cpp" />

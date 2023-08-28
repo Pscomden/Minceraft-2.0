@@ -175,7 +175,7 @@ namespace Camera {
 			case Mode::FIRST_PERSON:
 				addYaw(offset.x);
 				addPitch(offset.y);
-				setPosition(player_pos + glm::vec3(0.0f, 1.2f, 0.0f));
+				setPosition(player_pos + glm::vec3(0.0f, 0.5f, 0.0f));
 				break;
 			case Mode::THIRD_PERSON:
 				addYaw(offset.x);

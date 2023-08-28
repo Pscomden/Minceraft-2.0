@@ -18,7 +18,7 @@ namespace World {
 		// TODO: load from settings
 		horizontal_range = 50;
 		vertical_range = 8;
-		setLimit(glm::ivec3(0, 0, 0), glm::ivec3(1, 1, 1));
+		setLimit(glm::ivec3(-5, -2, -5), glm::ivec3(5, 2, 5));
 		seed = 10;
 		World::world_directory = world_directory;
 		cubic_chunks = true;
@@ -81,6 +81,10 @@ namespace World {
 		World::start_limit = start_limit;
 		World::end_limit = end_limit;
 		ChunkManager::setLimit(start_limit, end_limit);
+	}
+
+	std::pair<glm::ivec3, glm::ivec3> getLimit() {
+		return std::pair<glm::ivec3, glm::ivec3>(start_limit, end_limit);
 	}
 
 	glm::ivec3 getRange() {

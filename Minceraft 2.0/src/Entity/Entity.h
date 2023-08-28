@@ -3,6 +3,7 @@
 #include "../Include.h"
 #include "../Physics/Shape.h"
 #include "../World/ChunkManager.h"
+#include "../Debug/Console.h"
 
 class Entity {
 public:
@@ -34,4 +35,7 @@ protected:
 	bool input_jump;
 	bool running;
 	float max_speed;
+	bool on_ground;
+
+	const float GRAVITY_ACCEL = 9.907;
 };

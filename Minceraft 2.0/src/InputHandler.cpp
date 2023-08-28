@@ -89,6 +89,9 @@ namespace InputHandler {
 		if (Input::keyPress(GLFW_KEY_F8)) {
 			DebugRenderer::toggleRangeBorders();
 		}
+		if (Input::keyPress(GLFW_KEY_F9)) {
+			DebugRenderer::toggleLimitBorders();
+		}
 		if (Input::keyPress(GLFW_KEY_F10)) {
 			ChunkRenderer::printOrder();
 		}

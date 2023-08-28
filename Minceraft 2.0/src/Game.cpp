@@ -78,6 +78,10 @@ namespace Game {
 		EntityRenderer::setEntities(World::getEntities());
 		pool.Start();
 
+		// Testing Zone
+
+		
+
 		return true;
 	}
 

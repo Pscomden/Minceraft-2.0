@@ -3,7 +3,7 @@
 Inventory::Inventory(int size) {
 	Item null_item = Item(0, 0);
 	items = std::vector<Item>(size, null_item);
-	slot_size = 75;
+	slot_size = 75 * 2;
 }
 
 Item Inventory::add(Item item) {

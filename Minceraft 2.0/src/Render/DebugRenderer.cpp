@@ -7,6 +7,7 @@ namespace DebugRenderer {
 	static bool stats = false;
 	static bool chunk_borders = false;
 	static bool range_borders = false;
+	static bool limit_borders = false;
 
 	void renderRigidBodies() {
 		if (player != nullptr) {
@@ -46,6 +47,22 @@ namespace DebugRenderer {
 		mesh.render();
 	}
 
+	void renderLimitBorders() {
+		//std::cout << "here\n";
+		LineMesh mesh;
+		glm::ivec3 pos = ChunkManager::posToChunk(glm::round(player->getPos()));
+		glm::ivec3 index{};
+		glm::ivec3 chunk_size = glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
+		std::pair<glm::ivec3, glm::ivec3> limit = World::getLimit();
+		// chunk position is not chunk middle
+		glm::ivec3 middle = ((glm::vec3)(limit.second + limit.first) / 2.0f) * (glm::vec3)chunk_size + (glm::vec3)(chunk_size / 2);
+		// 0 - 0 must be at least 1
+		glm::ivec3 size = (limit.second - limit.first) * chunk_size + chunk_size;
+		mesh.addRect(Rectangle(middle, size), glm::vec3(0.0f, 1.0f, 0.0f));
+		mesh.generateBuffers();
+		mesh.render();
+	}
+
 	void renderStats() {
 		glm::ivec3 chunk_pos = ChunkManager::posToChunk(round(player->getPos()));
 		glm::ivec3 relative = ChunkManager::chunkRelative(round(player->getPos()));
@@ -69,6 +86,8 @@ namespace DebugRenderer {
 			renderChunkBorders();
 		if (range_borders)
 			renderRangeBorders();
+		if (limit_borders)
+			renderLimitBorders();
 		if (stats)
 			renderStats();
 		if (Command::isOpen())
@@ -89,6 +108,10 @@ namespace DebugRenderer {
 
 	void toggleRangeBorders() {
 		range_borders = 1 - range_borders;
+	}
+
+	void toggleLimitBorders() {
+		limit_borders = 1 - limit_borders;
 	}
 
 	void setPlayer(std::shared_ptr<Player> player) {

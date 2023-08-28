@@ -14,5 +14,6 @@ namespace World {
 	void setHorizontalRange(int range);
 	void setVerticalRange(int range);
 	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit);
+	std::pair<glm::ivec3, glm::ivec3> getLimit();
 	glm::ivec3 getRange();
 }

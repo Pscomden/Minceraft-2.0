@@ -6,6 +6,7 @@
 #include "Mesh/LineMesh.h"
 #include "../Entity/Player.h"
 #include "../Debug/Command.h"
+#include "../Debug/Console.h"
 #include "../World/World.h"
 
 namespace DebugRenderer {
@@ -14,5 +15,6 @@ namespace DebugRenderer {
 	void toggleStats();
 	void toggleChunkBorders();
 	void toggleRangeBorders();
+	void toggleLimitBorders();
 	void setPlayer(std::shared_ptr<Player> player);
 }

@@ -33,7 +33,7 @@ public:
 	void setMode(Mode mode);
 	Mode getMode();
 private:
-	void moveSurvival();
+	void moveSurvival(float delta_time);
 	void moveGod();
 	void moveGhost();
 	Ray* ray;
