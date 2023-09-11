@@ -35,6 +35,14 @@ namespace ChunkRenderer {
 				}
 			}
 		}
+		
+		// fog :)
+		// the camera is used for calculating distance of point to camera
+		float fogStart = (World::getRange().x * pc::c_length) / 2 - (pc::c_length);
+		float fogEnd = (World::getRange().x * pc::c_length) / 2;
+		
+		Shaders::worldShader()->setFloat("fogStart", fogStart);
+		Shaders::worldShader()->setFloat("fogEnd", fogEnd);
 
 		is_rendering = true;
 		for (auto& chunk : render_order) {

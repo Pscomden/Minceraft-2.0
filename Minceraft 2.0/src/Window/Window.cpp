@@ -9,6 +9,7 @@ namespace Window {
 	// prevent suddden camera movement
 	static glm::ivec2* mouse_pos;
 	static glm::ivec2* prev_mouse_pos;
+	static bool has_resized;
 
 	bool Window::init() {
 		if (!glfwInit()) {
@@ -20,7 +21,7 @@ namespace Window {
 
 		window = glfwCreateWindow(1024, 768, "", nullptr, nullptr);
 		glfwMakeContextCurrent(window);
-		glfwSwapInterval(0);
+		glfwSwapInterval(1);
 		glfwSetFramebufferSizeCallback(window, frameBuffSizeCallback);
 
 		gladLoadGL();
@@ -34,6 +35,8 @@ namespace Window {
 		glClearColor(0.0f, 0.5f, 0.5f, 1.0f);
 
 		mouse_locked = false;
+		// initial UI calibration
+		has_resized = true;
 
 		return true;
 	}
@@ -43,16 +46,29 @@ namespace Window {
 	}
 
 	bool update() {
+		auto start_time = std::chrono::high_resolution_clock::now();
 		glfwPollEvents();
+
 		glfwGetWindowSize(window, &size.x, &size.y);
 
 		if (glfwWindowShouldClose(window)) {
 			glfwDestroyWindow(window);
 			return false;
 		}
+
 		glfwSwapBuffers(window);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDepthFunc(GL_LEQUAL);
+
+		auto end_time = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+		auto delta = (double)((duration.count()) / 1000000.0);
+
+		static double max = 0.0;
+		if (delta > max) {
+			max = delta;
+			std::cout << "window: " << delta << "\n";
+		}
 
 		return true;
 	}
@@ -98,5 +114,14 @@ namespace Window {
 
 	void frameBuffSizeCallback(GLFWwindow* window, int width, int height) {
 		glViewport(0, 0, width, height);
+		has_resized = true;
+	}
+
+	bool hasResized() {
+		if (has_resized) {
+			has_resized = false;
+			return true;
+		}
+		return false;
 	}
 }

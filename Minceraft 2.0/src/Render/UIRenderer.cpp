@@ -108,6 +108,10 @@ namespace UIRenderer {
 			renderInventory();
 			renderAttributes();
 			renderInventoryNumbers();
+			// reajust ui when window resize
+			if (Window::hasResized()) {
+				player->getInventory()->resetSlotSize();
+			}
 		}
 	}
 

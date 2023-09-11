@@ -13,6 +13,13 @@ namespace Game {
 		double delta_time = 0.0f;
 		while (true) {
 			auto start_time = std::chrono::high_resolution_clock::now();
+			
+			// don't go too far!
+			float far_factor = 1 / 60.0f;
+			if (delta_time > far_factor) {
+				delta_time = far_factor;
+			}
+			
 			if (!gameLoop(delta_time))
 				break;
 			auto end_time = std::chrono::high_resolution_clock::now();
@@ -89,15 +96,17 @@ namespace Game {
 		// resets previous inputs
 		// must be done before event polling
 		Input::update();
+		
 		if (!Window::update()) {
 			return false;
 		}
 		InputHandler::update(delta_time);
 
 		World::update(delta_time);
+
 		// set camera position now
 		Camera::update(World::getPlayer()->getPos());
-		
+
 		Renderer::render();
 
 		return true;

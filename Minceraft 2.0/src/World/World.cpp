@@ -16,9 +16,10 @@ namespace World {
 
 	void start(std::string world_directory) {
 		// TODO: load from settings
-		horizontal_range = 50;
+		horizontal_range = 10;
 		vertical_range = 8;
-		setLimit(glm::ivec3(-5, -2, -5), glm::ivec3(5, 2, 5));
+		//setLimit(glm::ivec3(-5, -2, -5), glm::ivec3(5, 2, 5));
+		setLimit(glm::ivec3(0), glm::ivec3(0));
 		seed = 10;
 		World::world_directory = world_directory;
 		cubic_chunks = true;

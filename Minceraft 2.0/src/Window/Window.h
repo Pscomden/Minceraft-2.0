@@ -11,6 +11,7 @@ namespace Window {
 	bool isMouseLocked();
 	void setMousePos(glm::ivec2* mouse_pos, glm::ivec2* prev_mouse_pos);
 	void frameBuffSizeCallback(GLFWwindow* window, int width, int height);
+	bool hasResized();
 	glm::ivec2 getSize();
 	GLFWwindow* getWindow();
 }

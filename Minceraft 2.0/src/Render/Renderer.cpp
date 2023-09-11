@@ -6,7 +6,11 @@ namespace Renderer {
 		SkyboxRenderer::render();
 		Shaders::useWorld();
 		glm::mat4 matrix = Camera::getMatrix();
+
 		Shaders::worldShader()->setMat4("MVP", matrix);
+		
+		Shaders::worldShader()->setVec3("cameraPos", Camera::getPosition());
+		
 		Atlas::getAtlas()->Use();
 		ChunkRenderer::render(World::getPlayer()->getPos());
 		
