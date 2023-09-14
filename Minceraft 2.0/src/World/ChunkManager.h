@@ -3,6 +3,7 @@
 #include "../Include.h"
 #include "Chunk.h"
 #include "WorldBuilder.h"
+#include "../Debug/Console.h"
 #include "../Render/ChunkMeshBuilder.h"
 #include "../ThreadPool.h"
 

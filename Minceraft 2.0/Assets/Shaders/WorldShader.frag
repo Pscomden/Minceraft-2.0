@@ -25,7 +25,12 @@ float getFogFactor(float d)
 void main()
 {
     FragColor = texture(ourTexture, vertexIn.TexCoord);
-
+    if (FragColor.a < 0.1) {
+        discard;
+    }
+    
+    FragColor.rgb *= light;
+    
     float d = distance(cameraPos, vertexIn.pos);
     float fogFactor = getFogFactor(d);
     float alpha = 1 - fogFactor;
@@ -33,8 +38,3 @@ void main()
     FragColor.rgb *= vertexIn.light;
     FragColor = vec4(FragColor.rgb, FragColor.a * alpha);
 }
-
-
-
-
-    

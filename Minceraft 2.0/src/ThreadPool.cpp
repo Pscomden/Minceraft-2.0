@@ -30,6 +30,15 @@ void ThreadPool::ThreadLoop() {
     }
 }
 
+size_t ThreadPool::numJobs() {
+    size_t num_jobs = -1;
+    {
+        std::unique_lock<std::mutex> lock(queue_mutex);
+        num_jobs = jobs.size();
+    }
+    return num_jobs;
+}
+
 void ThreadPool::QueueJob(const std::function<void()>& job) {
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
