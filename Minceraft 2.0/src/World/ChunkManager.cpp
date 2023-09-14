@@ -18,6 +18,7 @@ namespace ChunkManager {
 	static bool deleting_chunks;
 	static bool updating;
 	static bool cubic_chunks;
+	static int chunk_update_tick;
 
 	bool poolChunkExists(glm::ivec3 pos);
 
@@ -28,6 +29,7 @@ namespace ChunkManager {
 		world_directory = "";
 		first_frame = true;
 		player_chunk_pos = glm::ivec3(0);
+		chunk_update_tick = 10;
 		
 		deleting_chunks = false;
 		updating = false;
@@ -93,6 +95,9 @@ namespace ChunkManager {
 	}
 
 	void generateChunkBuffers() {
+		// only once per frame
+		// building meshes on main thread is a lot of work
+		// TODO: see if locks are necessary
 		if (chunk_lock.try_lock()) {
 			for (auto& pair : chunks) {
 				if (pair.second) {
@@ -197,7 +202,17 @@ namespace ChunkManager {
 	}
 
 	void update(glm::ivec3 player_pos) {
-		updating = true;
+		static int cur_tick = 1;
+		bool is_update_tick = false;
+		if (cur_tick == chunk_update_tick) {
+			cur_tick = 1;
+			is_update_tick = true;
+		}
+		cur_tick++;
+		Console::num("Num jobs: ", pool.numJobs());
+		if (!is_update_tick) {
+			return;
+		}
 		player_chunk_pos = posToChunk(player_pos);
 		// TODO: change to loop through all chunks once per frame
 		generateChunkBuffers();
@@ -218,7 +233,6 @@ namespace ChunkManager {
 				pool_chunks.erase(it);
 			}
 		}
-		updating = false;
 	}
 
 	void genWorld(glm::ivec3 player_pos) {

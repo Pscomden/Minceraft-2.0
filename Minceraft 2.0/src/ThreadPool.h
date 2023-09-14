@@ -10,6 +10,7 @@ public:
     bool Busy();
     void Stop();
     void ThreadLoop();
+    size_t numJobs();
 private:
     bool should_terminate = false;           // Tells threads to stop looking for jobs
     std::mutex queue_mutex;                  // Prevents data races to the job queue

@@ -32,7 +32,7 @@ namespace WorldBuilder {
 
     float* getCaveMap(int chunk_x, int chunk_y, int chunk_z) {
         float* cave_map = new float[pc::c_length * pc::c_height * pc::c_width];
-        cave_noise->GenUniformGrid3D(cave_map, chunk_x * 32, chunk_y * 32, chunk_z * 32, 32, 32, 32, 0.01, seed);
+        cave_noise->GenUniformGrid3D(cave_map, chunk_x * pc::c_length, chunk_y * pc::c_height, chunk_z * pc::c_width, pc::c_length, pc::c_height, pc::c_width, 0.01, seed);
 
         return cave_map;
     }
