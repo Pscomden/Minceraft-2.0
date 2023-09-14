@@ -284,7 +284,7 @@ namespace ChunkManager {
 
 	void serialize(std::shared_ptr<Chunk> chunk) {
 		std::stringstream file_name;
-		file_name << world_directory + "/chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".txt";
+		file_name << world_directory + "chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".bin";
 		FILE* file = fopen(file_name.str().c_str(), "wb");
 		if (file) {
 			fwrite(chunk->blocks, sizeof(short), static_cast<size_t>(pc::c_length * pc::c_height) * pc::c_width, file);
@@ -297,7 +297,7 @@ namespace ChunkManager {
 
 	bool deserialize(std::shared_ptr<Chunk> chunk) {
 		std::stringstream file_name;
-		file_name << world_directory + "/chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".txt";
+		file_name << world_directory + "chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".bin";
 		FILE* file = fopen(file_name.str().c_str(), "rb");
 		if (file) {
 			fread(chunk->blocks, sizeof(short), static_cast<size_t>(pc::c_length * pc::c_height) * pc::c_width, file);

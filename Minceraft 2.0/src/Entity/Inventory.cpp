@@ -111,6 +111,11 @@ float Inventory::getSlotSize() {
 	return slot_size;
 }
 
+void Inventory::resetSlotSize() {
+	const int slot_sizes[] = { 1080, 90};
+	slot_size = Window::getSize().y / 12;
+}
+
 glm::vec2 Inventory::getOffset() {
 	return glm::ivec2(Window::getSize() / 2 - glm::ivec2(slot_size * 4.5f, slot_size * 2.0f));;
 }

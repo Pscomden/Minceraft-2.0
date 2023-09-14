@@ -18,6 +18,7 @@ public:
 	void rightClickInv(glm::ivec2 mouse, Item& cursor_item);
 	std::vector<Item>* getItems();
 	float getSlotSize();
+	void resetSlotSize();
 	glm::vec2 getOffset();
 	glm::ivec2 getSlot(glm::ivec2 mouse_pos);
 	size_t size();
