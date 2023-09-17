@@ -233,14 +233,11 @@ namespace ChunkMeshBuilder {
 		chunk->generated_edge[(int)edge] = true;
 	}
 
-	void buildChunkMesh(std::shared_ptr<Chunk> chunk, bool reset) {
+	void buildChunkMesh(std::shared_ptr<Chunk> chunk) {
 		if (chunk == nullptr || chunk->state == Chunk::State::DELETING) {
 			return;
 		}
 		ChunkMesh* mesh = &chunk->mesh;
-		if (reset) {
-			chunk->clearMesh();
-		}
 		glm::ivec3 chunk_pos = { chunk->pos.x * pc::c_length, chunk->pos.y * pc::c_height, chunk->pos.z * pc::c_width };
 		bool full = true;
 		bool prev_full = true;
@@ -287,7 +284,7 @@ namespace ChunkMeshBuilder {
 		for (int i = 0; i < 6; i++) {
 			chunk->generated_edge[i] = false;
 		}
-		chunk->state = Chunk::State::INNER_MESH;
+		//chunk->state = Chunk::State::MESH;
 	}
 
 	std::shared_ptr<Chunk> getChunk(glm::ivec3 pos) {

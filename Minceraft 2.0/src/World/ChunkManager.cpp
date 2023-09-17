@@ -5,27 +5,29 @@
 
 1. If the camera has left the local chunk, get list of empty chunks
 2. Also get list of chunks to delete
-Pick one a frame (for now)
+Pick one function per frame or tick (for now)
 	---
 	1. Create empty chunk in the chunks list, set state to new
 	2. Queue the chunk to generate blocks, state now generated
-	3. Look for chunk with find_adj true
-	4. For each vertices wall the chunk hasn't made
-	5. Set adj chunk that hasn't generated relevant wall find_adj to true
-	6. Generate wall vertices, set generated_edge[side] to true
-	7. Once all are generated, set find_adj to false
 	---
 	1. Set a single delete chunk to saving status and queue serialize
 	2. Delete a chunk in deleting state
 	---
 	1. Generate a chunk's buffer on main thread, no pool
+	2. Set status to buffers
 	---
-	1. Scan for a chunk with generated state, queue to generate inner mesh vertices, status now inner mesh, set find_adj true
+	1. Scan for a chunk with generated state, queue to generate inner mesh vertices, status now mesh, set find_adj true
+	2. Look for chunk with find_adj true and generated
+	3. For each vertices wall the chunk hasn't made
+	4. Set adj chunk that hasn't generated relevant wall and NOT NEW/DELETING find_adj to true
+	5. Generate wall vertices, set generated_edge[side] to true
+	6. Once all are generated, set find_adj to false
 	---
 
 ----- Pool Cycles -----
 
 * Should never interact with chunks outside of the single provided!!! *
+* Each should use chunk lock!!! *
 
 Generating chunk blocks:
 1. Try to deserialize chunk from file
@@ -44,8 +46,6 @@ Deleting chunk:
 namespace ChunkManager {
 
 	static robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> chunks; // normal chunks
-	// TODO: remove pool_chunks, deprecated by having chunk exist in chunks
-	static robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> pool_chunks; // chunks being generated in the pool
 	// May be deprecated
 	static std::mutex chunk_lock; // for deleting chunks on main thread
 	static std::queue<glm::ivec3> delete_chunks; // chunks to be deleted
@@ -62,7 +62,64 @@ namespace ChunkManager {
 	static bool cubic_chunks;
 	static int chunk_update_tick;
 
-	bool poolChunkExists(glm::ivec3 pos);
+	void pool_genChunkBlocks(std::shared_ptr<Chunk> chunk) {
+		chunk->lock.lock();
+		if (chunk->state == Chunk::State::NEW) {
+			if (!deserialize(chunk)) {
+				WorldBuilder::buildChunk(chunk);
+			}
+			chunk->state = Chunk::State::GENERATED;
+		}
+		chunk->lock.unlock();
+	}
+
+	void pool_genChunkMesh(std::shared_ptr<Chunk> chunk) {
+		chunk->lock.lock();
+		if (chunk->state != Chunk::State::DELETING) {
+			ChunkMeshBuilder::buildChunkMesh(chunk);
+			chunk->state = Chunk::State::MESH;
+		}
+		chunk->lock.unlock();
+	}
+
+	void pool_deleteChunk(std::shared_ptr<Chunk> chunk) {
+		chunk->lock.lock();
+		if (chunk->state != Chunk::State::DELETING) {
+			if (chunk->is_modified) {
+				serialize(chunk);
+			}
+			chunk->state = Chunk::State::DELETING;
+		}
+		chunk->lock.unlock();
+	}
+
+	void main_genChunkBlocks() {
+		if (!empty_chunks.empty()) {
+			glm::ivec3 new_chunk_pos = empty_chunks.back();
+			empty_chunks.pop_back();
+			std::shared_ptr<Chunk> new_chunk = std::make_shared<Chunk>(new_chunk_pos);
+			chunks.emplace(new_chunk_pos, new_chunk);
+			pool.QueueJob(pool_genChunkBlocks)
+		}
+	}
+
+	void main_deleteChunk() {
+
+		std::shared_ptr<Chunk> deleting_chunk;
+
+		if (deleting_chunk->lock.try_lock()) {
+			chunks.erase(deleting_chunk->pos);
+			deleting_chunk->lock.unlock();
+		}
+	}
+
+	void main_genChunkBuffers() {
+
+	}
+
+	void main_genChunkMesh() {
+
+	}
 
 	bool init() {
 		seed = 10;
@@ -85,13 +142,6 @@ namespace ChunkManager {
 		return true;
 	}
 
-	void deleteChunk(std::shared_ptr<Chunk> chunk) {
-		if (chunk->is_modified) {
-			serialize(chunk);
-		}
-		chunk->state = Chunk::State::DELETING;
-	}
-
 	bool inWorldLimit(glm::ivec3 chunk_pos) {
 		return (chunk_pos.x >= start_limit.x &&
 				chunk_pos.y >= start_limit.y &&
@@ -108,81 +158,6 @@ namespace ChunkManager {
 			player_pos.y > (chunk_pos.y + (range.y / 2)) ||
 			player_pos.z < (chunk_pos.z - (range.z / 2)) ||
 			player_pos.z > (chunk_pos.z + (range.z / 2)));
-	}
-
-	void deleteEmptyChunks(glm::ivec3 chunk_pos) {
-		deleting_chunks = true;
-		if (chunk_lock.try_lock()) {
-			for (auto& pair : chunks) {
-				if (pair.second == nullptr) {
-					chunks.erase(pair.first);
-				}
-				else if (pair.second->state == Chunk::State::DELETING) {
-					if (pair.second->lock.try_lock()) {
-						pair.second->lock.unlock();
-						chunks.erase(pair.first);
-					}
-				}
-				else if (!inRange(pair.first, chunk_pos)) {
-					std::shared_ptr<Chunk> chunk = pair.second;
-					std::function<void()> func = [chunk]() {deleteChunk(chunk); };
-					pool.QueueJob(func);
-				}
-			}
-			chunk_lock.unlock();
-		}
-		deleting_chunks = false;
-	}
-
-	void generateChunkBuffers() {
-		// only once per frame
-		// building meshes on main thread is a lot of work
-		// TODO: see if locks are necessary
-		if (chunk_lock.try_lock()) {
-			for (auto& pair : chunks) {
-				if (pair.second) {
-					if (pair.second->lock.try_lock()) {
-						if (pair.second->state == Chunk::State::FULL_MESH) {
-							pair.second->mesh.generateBuffers();
-							pair.second->state = Chunk::State::BUFFERS;
-						}
-						else if (pair.second->state == Chunk::State::INNER_MESH) {
-							ChunkMeshBuilder::buildMeshEdges(pair.second, true);
-							pair.second->mesh.generateBuffers();
-							pair.second->state = Chunk::State::BUFFERS;
-						}
-						pair.second->lock.unlock();
-					}
-				}
-			}
-			chunk_lock.unlock();
-		}
-	}
-
-	void createChunk(std::shared_ptr<Chunk> chunk) {
-		// Don't create a chunk when player moved out of range
-		if (!inRange(chunk->pos, player_chunk_pos)) {
-			chunk->state = Chunk::State::DELETING;
-			return;
-		}
-		if (!deserialize(chunk)) {
-			WorldBuilder::buildChunk(chunk);
-		}
-		ChunkMeshBuilder::buildChunkMesh(chunk, false);
-	}
-
-	void createChunks() {
-		if (!empty_chunks.empty()) {
-			glm::ivec3 new_chunk_pos = empty_chunks.back();
-			if (!poolChunkExists(new_chunk_pos)) {
-				std::shared_ptr<Chunk> new_chunk = std::shared_ptr<Chunk>(new Chunk(new_chunk_pos));
-				//std::cout << "New Chunk at " << new_chunk->toString() << "\n";
-				empty_chunks.pop_back();
-				std::function<void()> func = [new_chunk]() {createChunk(new_chunk); };
-				pool.QueueJob(func);
-				pool_chunks.emplace(new_chunk->pos, new_chunk);
-			}
-		}
 	}
 
 	// TODO: replace with finding all empty chunks linearly and sorting by distance
@@ -247,45 +222,7 @@ namespace ChunkManager {
 		}
 		player_chunk_pos = posToChunk(player_pos);
 		// TODO: change to loop through all chunks once per frame
-		generateChunkBuffers();
-		deleteEmptyChunks(player_chunk_pos);
-		findEmptyChunks(player_pos);
-		createChunks();
-		auto it = pool_chunks.begin();
-		bool once = true;
-		for (; it != pool_chunks.end(); it++) {
-			if ((*it).second->state == Chunk::State::INNER_MESH && once) {
-				chunks.emplace((*it).second->pos, (*it).second);
-				pool_chunks.erase(it);
-				// cap adding chunks to frame rate because otherwise there are border issues
-				// TODO: solve this somehow!!! I'm too tired rn. 7/27 need to watch pbg do McDonald's Happy Meal Maker Toy
-				once = false;
-			}
-			else if ((*it).second->state == Chunk::State::DELETING) {
-				pool_chunks.erase(it);
-			}
-		}
-	}
-
-	void genWorld(glm::ivec3 player_pos) {
-		glm::ivec3 chunk_pos = posToChunk(player_pos);
-		chunk_pos.y = 0;
-		glm::ivec3 pos{};
-		for (pos.x = chunk_pos.x - 2; pos.x <= chunk_pos.x + 2; pos.x++) {
-			for (pos.z = chunk_pos.z - 2; pos.z <= chunk_pos.z + 2; pos.z++) {
-				if (!chunkExists(pos)) {
-					std::shared_ptr<Chunk> new_chunk = std::shared_ptr<Chunk>(new Chunk(pos));
-					if (!deserialize(new_chunk))
-						WorldBuilder::buildChunk(new_chunk);
-					chunks.emplace(pos, new_chunk);
-				}
-			}
-		}
-		for (auto& pair : chunks) {
-			ChunkMeshBuilder::buildChunkMesh(pair.second);
-			pair.second->mesh.generateBuffers();
-			pair.second->state = Chunk::State::BUFFERS;
-		}
+		
 	}
 
 	void setRange(int horizontal_range, int vertical_range) {
@@ -361,10 +298,6 @@ namespace ChunkManager {
 		return &chunk->blocks[indices.x][indices.y][indices.z];
 	}
 
-	bool poolChunkExists(glm::ivec3 pos) {
-		return pool_chunks.find(pos) != pool_chunks.end();
-	}
-
 	bool chunkExists(glm::ivec3 pos) {
 		return chunks.find(pos) != chunks.end();
 	}
@@ -375,17 +308,6 @@ namespace ChunkManager {
 
 	robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>>* getChunks() {
 		return &chunks;
-	}
-
-	std::array<std::shared_ptr<Chunk>, 4> findAdjacentChunks(std::shared_ptr<Chunk> chunk) {
-		std::array<std::shared_ptr<Chunk>, 4> adj_chunks{ nullptr };
-		if (chunk != nullptr) {
-			adj_chunks[0] = getChunk(chunk->pos + glm::ivec3(-1, 0, 0));
-			adj_chunks[1] = getChunk(chunk->pos + glm::ivec3(1, 0, 0));
-			adj_chunks[2] = getChunk(chunk->pos + glm::ivec3(0, 0, -1));
-			adj_chunks[3] = getChunk(chunk->pos + glm::ivec3(0, 0, 1));
-		}
-		return adj_chunks;
 	}
 
 	Block changeBlock(glm::ivec3 pos, int id) {

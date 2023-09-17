@@ -114,7 +114,6 @@ namespace WorldBuilder {
     void buildChunk(std::shared_ptr<Chunk> chunk) {
         buildChunkTerrain(chunk);
         setStructures(chunk);
-        chunk->state = Chunk::State::GENERATED;
     }
 
     void removeChunkStructPair(glm::ivec3 chunk_pos) {

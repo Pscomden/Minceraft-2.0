@@ -10,28 +10,19 @@ struct Chunk {
 	enum class State : short {
 		NEW, // fresh out of oven
 		GENERATED, // all blocks no mesh
-		INNER_MESH, // inner vertices generated, no buffer
-		// maybe replace with 6 bools?
-		FULL_MESH, // all vertices generated, no buffer
+		MESH, // inner vertices generated, no buffer
 		BUFFERS, // arbitrary vertices generated, buffer
 		DELETING // to delete existing buffer, already serialize
 	};
 
-	Chunk() {
-		pos = glm::ivec3(0);
-		state = State::NEW;
-	}
+	Chunk() : Chunk(glm::ivec3(0)) {}
 
-	Chunk(int x, int y, int z) {
-		pos.x = x;
-		pos.y = y;
-		pos.z = z;
-		state = State::NEW;
-	}
+	Chunk(int x, int y, int z) : Chunk(glm::ivec3(x, y, z)) {}
 
 	Chunk(glm::ivec3 pos) {
 		this->pos = pos;
 		state = State::NEW;
+		find_adj = false;
 	}
 
 	~Chunk() {
@@ -61,10 +52,11 @@ struct Chunk {
 	glm::ivec3 pos;
 	Block blocks[pc::c_length][pc::c_height][pc::c_width];
 	ChunkMesh mesh;
-	bool is_modified = false;
+	bool is_modified;
 	State state;
 	std::mutex lock;
 	// a chunk could generate its edge, and an adjacent one could come back
 	// and accidently add another redundant edge
 	bool generated_edge[6] = {false, false, false, false, false, false};
+	bool find_adj;
 };
