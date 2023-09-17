@@ -29,8 +29,6 @@ void main()
         discard;
     }
     
-    FragColor.rgb *= light;
-    
     float d = distance(cameraPos, vertexIn.pos);
     float fogFactor = getFogFactor(d);
     float alpha = 1 - fogFactor;

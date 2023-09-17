@@ -21,7 +21,7 @@ namespace Window {
 
 		window = glfwCreateWindow(1024, 768, "", nullptr, nullptr);
 		glfwMakeContextCurrent(window);
-		glfwSwapInterval(1);
+		glfwSwapInterval(0);
 		glfwSetFramebufferSizeCallback(window, frameBuffSizeCallback);
 
 		gladLoadGL();

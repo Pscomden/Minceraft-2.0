@@ -1,15 +1,57 @@
 #include "ChunkManager.h"
 
+/*
+----- Chunk Cycle -----
+
+1. If the camera has left the local chunk, get list of empty chunks
+2. Also get list of chunks to delete
+Pick one a frame (for now)
+	---
+	1. Create empty chunk in the chunks list, set state to new
+	2. Queue the chunk to generate blocks, state now generated
+	3. Look for chunk with find_adj true
+	4. For each vertices wall the chunk hasn't made
+	5. Set adj chunk that hasn't generated relevant wall find_adj to true
+	6. Generate wall vertices, set generated_edge[side] to true
+	7. Once all are generated, set find_adj to false
+	---
+	1. Set a single delete chunk to saving status and queue serialize
+	2. Delete a chunk in deleting state
+	---
+	1. Generate a chunk's buffer on main thread, no pool
+	---
+	1. Scan for a chunk with generated state, queue to generate inner mesh vertices, status now inner mesh, set find_adj true
+	---
+
+----- Pool Cycles -----
+
+* Should never interact with chunks outside of the single provided!!! *
+
+Generating chunk blocks:
+1. Try to deserialize chunk from file
+2. Else generate fresh using world builder
+3. Set state from new to generated
+
+Generating chunk vertices:
+1. Clear vertices
+2. Build inner vertices
+3. Set state to inner_mesh, find_adj to true
+
+Deleting chunk:
+1. Serialize if modified
+2. Set state to deleting
+*/
 namespace ChunkManager {
 
 	static robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> chunks; // normal chunks
+	// TODO: remove pool_chunks, deprecated by having chunk exist in chunks
 	static robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> pool_chunks; // chunks being generated in the pool
+	// May be deprecated
 	static std::mutex chunk_lock; // for deleting chunks on main thread
 	static std::queue<glm::ivec3> delete_chunks; // chunks to be deleted
-	static std::queue<glm::ivec3> empty_chunks; // chunks to be created
+	static std::vector<glm::ivec3> empty_chunks; // chunks to be created
 	static glm::ivec3 player_chunk_pos;
-	static int horizontal_range;
-	static int vertical_range;
+	static glm::ivec3 range;
 	static glm::ivec3 start_limit;
 	static glm::ivec3 end_limit;
 	static int seed;
@@ -23,8 +65,6 @@ namespace ChunkManager {
 	bool poolChunkExists(glm::ivec3 pos);
 
 	bool init() {
-		horizontal_range = 0;
-		vertical_range = 3;
 		seed = 10;
 		world_directory = "";
 		first_frame = true;
@@ -62,12 +102,12 @@ namespace ChunkManager {
 	}
 
 	bool inRange(glm::ivec3 chunk_pos, glm::ivec3 player_pos) {
-		return !(player_pos.x < (chunk_pos.x - (horizontal_range / 2)) ||
-			player_pos.x > (chunk_pos.x + (horizontal_range / 2)) ||
-			player_pos.y < (chunk_pos.y - (vertical_range / 2)) ||
-			player_pos.y > (chunk_pos.y + (vertical_range / 2)) ||
-			player_pos.z < (chunk_pos.z - (horizontal_range / 2)) ||
-			player_pos.z > (chunk_pos.z + (horizontal_range / 2)));
+		return !(player_pos.x < (chunk_pos.x - (range.x / 2)) ||
+			player_pos.x > (chunk_pos.x + (range.x / 2)) ||
+			player_pos.y < (chunk_pos.y - (range.y / 2)) ||
+			player_pos.y > (chunk_pos.y + (range.y / 2)) ||
+			player_pos.z < (chunk_pos.z - (range.z / 2)) ||
+			player_pos.z > (chunk_pos.z + (range.z / 2)));
 	}
 
 	void deleteEmptyChunks(glm::ivec3 chunk_pos) {
@@ -133,11 +173,11 @@ namespace ChunkManager {
 
 	void createChunks() {
 		if (!empty_chunks.empty()) {
-			glm::ivec3 new_chunk_pos = empty_chunks.front();
+			glm::ivec3 new_chunk_pos = empty_chunks.back();
 			if (!poolChunkExists(new_chunk_pos)) {
 				std::shared_ptr<Chunk> new_chunk = std::shared_ptr<Chunk>(new Chunk(new_chunk_pos));
 				//std::cout << "New Chunk at " << new_chunk->toString() << "\n";
-				empty_chunks.pop();
+				empty_chunks.pop_back();
 				std::function<void()> func = [new_chunk]() {createChunk(new_chunk); };
 				pool.QueueJob(func);
 				pool_chunks.emplace(new_chunk->pos, new_chunk);
@@ -145,8 +185,10 @@ namespace ChunkManager {
 		}
 	}
 
+	// TODO: replace with finding all empty chunks linearly and sorting by distance
 	// https://stackoverflow.com/review/suggested-edits/1416384
-	void findEmptyChunks(glm::ivec3 chunk_pos) {
+	void findEmptyChunks(glm::vec3 center_pos) {
+		glm::ivec3 chunk_pos = posToChunk(center_pos);
 		static glm::ivec3 old_pos = chunk_pos;
 		if (chunk_pos != old_pos) {
 			old_pos = chunk_pos;
@@ -154,50 +196,38 @@ namespace ChunkManager {
 		else {
 			return;
 		}
-		int X = horizontal_range;
-		int Y = horizontal_range;
-		int x, y, dx, dy;
-
-		x = y = dx = 0;
-		dy = -1;
-		int t = std::max(X, Y);
-		int maxI = t * t;
-		for (int i = 0; i < maxI; i++) {
-			if ((-X / 2 <= x) && (x <= X / 2) && (-Y / 2 <= y) && (y <= Y / 2)) {
-				if (!cubic_chunks) {
-					glm::ivec3 pos = glm::ivec3(x, 0, y) + chunk_pos;
-					pos.y = 0;
-					if (!chunkExists(pos) && !poolChunkExists(pos) && inWorldLimit(pos)) {
-						empty_chunks.push(pos);
-					}
-				}
-				else {
-					int medium = chunk_pos.y;
-					glm::ivec3 pos = glm::ivec3(x + chunk_pos.x, chunk_pos.y, y + chunk_pos.z);
-					for (int j = 0; j < vertical_range; j++) {
-						if (!chunkExists(pos) && !poolChunkExists(pos) && inWorldLimit(pos)) {
-							empty_chunks.push(pos);
-						}
-						if (pos.y == chunk_pos.y) {
-							pos.y++;
-						}
-						else {
-							int dz = (medium - pos.y) * 2;
-							if (pos.y < medium) {
-								pos.y++;
-							}
-							pos.y += dz;
-						}
+		glm::ivec3 start = chunk_pos - (range / 2);
+		glm::ivec3 end = chunk_pos + (range / 2);
+		glm::ivec3 pos;
+		empty_chunks.clear();
+		std::vector<float> distances;
+		for (pos.x = start.x; pos.x <= end.x; pos.x++) {
+			for (pos.y = start.y; pos.y <= end.y; pos.y++) {
+				for (pos.z = start.z; pos.z <= end.z; pos.z++) {
+					if (inWorldLimit(pos) && !chunkExists(pos)) {
+						empty_chunks.push_back(pos);
+						distances.push_back(glm::distance(center_pos, (glm::vec3)(pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) + glm::ivec3(pc::c_length, pc::c_height, pc::c_width) / 2)));
 					}
 				}
 			}
-			if ((x == y) || ((x < 0) && (x == -y)) || ((x > 0) && (x == 1 - y))) {
-				t = dx;
-				dx = -dy;
-				dy = t;
+		}
+		for (int i = empty_chunks.size() - 1; i >= 0; i--) {
+			float min = distances[i];
+			int index = i;
+			for (int j = i; j >= 0; j--) {
+				if (distances[j] < min) {
+					min = distances[j];
+					index = j;
+				}
 			}
-			x += dx;
-			y += dy;
+			if (i != index) {
+				float temp_d = distances[index];
+				glm::ivec3 temp_e = empty_chunks[index];
+				distances[index] = distances[i];
+				empty_chunks[index] = empty_chunks[i];
+				distances[i] = temp_d;
+				empty_chunks[i] = temp_e;
+			}
 		}
 	}
 
@@ -209,7 +239,9 @@ namespace ChunkManager {
 			is_update_tick = true;
 		}
 		cur_tick++;
-		Console::num("Num jobs: ", pool.numJobs());
+		int jobs = pool.numJobs();
+		if (jobs > 0)
+			Console::num("Num jobs: ", jobs);
 		if (!is_update_tick) {
 			return;
 		}
@@ -217,7 +249,7 @@ namespace ChunkManager {
 		// TODO: change to loop through all chunks once per frame
 		generateChunkBuffers();
 		deleteEmptyChunks(player_chunk_pos);
-		findEmptyChunks(player_chunk_pos);
+		findEmptyChunks(player_pos);
 		createChunks();
 		auto it = pool_chunks.begin();
 		bool once = true;
@@ -257,8 +289,7 @@ namespace ChunkManager {
 	}
 
 	void setRange(int horizontal_range, int vertical_range) {
-		ChunkManager::horizontal_range = horizontal_range;
-		ChunkManager::vertical_range = vertical_range;
+		ChunkManager::range = glm::ivec3(horizontal_range, vertical_range, horizontal_range);
 	}
 
 	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit) {

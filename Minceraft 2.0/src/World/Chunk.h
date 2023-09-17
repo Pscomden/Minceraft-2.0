@@ -8,12 +8,13 @@
 struct Chunk {
 
 	enum class State : short {
-		NEW,
-		GENERATED,
-		INNER_MESH,
-		FULL_MESH,
-		BUFFERS,
-		DELETING
+		NEW, // fresh out of oven
+		GENERATED, // all blocks no mesh
+		INNER_MESH, // inner vertices generated, no buffer
+		// maybe replace with 6 bools?
+		FULL_MESH, // all vertices generated, no buffer
+		BUFFERS, // arbitrary vertices generated, buffer
+		DELETING // to delete existing buffer, already serialize
 	};
 
 	Chunk() {

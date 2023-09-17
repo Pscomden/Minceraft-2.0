@@ -78,10 +78,11 @@ namespace WorldBuilder {
 
     void buildChunkTerrain(std::shared_ptr<Chunk> chunk) {
         float* height_map = getHeightMap(chunk->pos.x, chunk->pos.z);
+        const float height_factor = 20.0f;
         //float* cave_map = getCaveMap(chunk->pos.x, chunk->pos.y, chunk->pos.z);
         for (int x = 0; x < pc::c_length; x++) {
             for (int z = 0; z < pc::c_width; z++) {
-                int height = floor(height_map[z * pc::c_length + x] * 50.0f);
+                int height = floor(height_map[z * pc::c_length + x] * height_factor);
                 for (int y = 0; y < pc::c_height; y++) {
                     if ((chunk->pos.y * pc::c_height + y) == height) {
                         chunk->blocks[x][y][z].id = 1;

@@ -12,7 +12,7 @@ out VertexData{
 uniform mat4 MVP;
 uniform ivec3 chunk_pos;
 
-const ivec3 chunk_size = ivec3(48, 48, 48);
+const ivec3 chunk_size = ivec3(32, 32, 32);
 
 void main()
 {
