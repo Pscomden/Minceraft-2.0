@@ -310,75 +310,7 @@ namespace ChunkMeshBuilder {
 	}
 
 	void buildMeshEdges(std::shared_ptr<Chunk> chunk, bool gen_adj_edges) {
-		glm::ivec3 pos = chunk->pos;
-		std::shared_ptr<Chunk> adj_chunk = getChunk(pos + glm::ivec3(-1, 0, 0));
-		if (adj_chunk != nullptr &&
-			// Still in the thread pool
-			(adj_chunk->state != Chunk::State::NEW &&
-			 adj_chunk->state != Chunk::State::GENERATED))
-		{
-			ChunkMeshBuilder::buildMeshEdge(chunk, adj_chunk, pc::CardinalDirection::LEFT);
-			if (gen_adj_edges) {
-				ChunkMeshBuilder::buildMeshEdge(adj_chunk, chunk, pc::CardinalDirection::RIGHT);
-				adj_chunk->state = Chunk::State::FULL_MESH;
-			}
-		}
-		adj_chunk = getChunk(pos + glm::ivec3(1, 0, 0));
-		if (adj_chunk != nullptr &&
-			(adj_chunk->state != Chunk::State::NEW &&
-			 adj_chunk->state != Chunk::State::GENERATED))
-		{
-			ChunkMeshBuilder::buildMeshEdge(chunk, adj_chunk, pc::CardinalDirection::RIGHT);
-			if (gen_adj_edges) {
-				ChunkMeshBuilder::buildMeshEdge(adj_chunk, chunk, pc::CardinalDirection::LEFT);
-				adj_chunk->state = Chunk::State::FULL_MESH;
-			}
-		}
-		adj_chunk = getChunk(pos + glm::ivec3(0, -1, 0));
-		if (adj_chunk != nullptr &&
-			(adj_chunk->state != Chunk::State::NEW &&
-			 adj_chunk->state != Chunk::State::GENERATED))
-		{
-			ChunkMeshBuilder::buildMeshEdge(chunk, adj_chunk, pc::CardinalDirection::DOWN);
-			if (gen_adj_edges) {
-				ChunkMeshBuilder::buildMeshEdge(adj_chunk, chunk, pc::CardinalDirection::UP);
-				adj_chunk->state = Chunk::State::FULL_MESH;
-			}
-		}
-		adj_chunk = getChunk(pos + glm::ivec3(0, 1, 0));
-		if (adj_chunk != nullptr &&
-			(adj_chunk->state != Chunk::State::NEW &&
-			 adj_chunk->state != Chunk::State::GENERATED))
-		{
-			ChunkMeshBuilder::buildMeshEdge(chunk, adj_chunk, pc::CardinalDirection::UP);
-			if (gen_adj_edges) {
-				ChunkMeshBuilder::buildMeshEdge(adj_chunk, chunk, pc::CardinalDirection::DOWN);
-				adj_chunk->state = Chunk::State::FULL_MESH;
-			}
-		}
-		adj_chunk = getChunk(pos + glm::ivec3(0, 0, -1));
-		if (adj_chunk != nullptr &&
-			(adj_chunk->state != Chunk::State::NEW &&
-			 adj_chunk->state != Chunk::State::GENERATED))
-		{
-			ChunkMeshBuilder::buildMeshEdge(chunk, adj_chunk, pc::CardinalDirection::FORWARD);
-			if (gen_adj_edges) {
-				ChunkMeshBuilder::buildMeshEdge(adj_chunk, chunk, pc::CardinalDirection::BACKWARD);
-				adj_chunk->state = Chunk::State::FULL_MESH;
-			}
-		}
-		adj_chunk = getChunk(pos + glm::ivec3(0, 0, 1));
-		if (adj_chunk != nullptr &&
-			(adj_chunk->state != Chunk::State::NEW &&
-			 adj_chunk->state != Chunk::State::GENERATED))
-		{
-			ChunkMeshBuilder::buildMeshEdge(chunk, adj_chunk, pc::CardinalDirection::BACKWARD);
-			if (gen_adj_edges) {
-				ChunkMeshBuilder::buildMeshEdge(adj_chunk, chunk, pc::CardinalDirection::FORWARD);
-				adj_chunk->state = Chunk::State::FULL_MESH;
-			}
-		}
-		chunk->state = Chunk::State::FULL_MESH;
+		
 	}
 
 	void regenChunk(std::shared_ptr<Chunk> chunk, bool gen_adj_edges) {

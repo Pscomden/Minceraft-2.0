@@ -3,6 +3,7 @@
 #include "../Include.h"
 #include "Block.h"
 #include "../Constants.h"
+#include "../Debug/Console.h"
 #include "../Render/Mesh/ChunkMesh.h"
 
 struct Chunk {
@@ -10,9 +11,9 @@ struct Chunk {
 	enum class State : short {
 		NEW, // fresh out of oven
 		GENERATED, // all blocks no mesh
-		MESH, // inner vertices generated, no buffer
+		MESH, // inner or all vertices generated, no buffer
 		BUFFERS, // arbitrary vertices generated, buffer
-		DELETING // to delete existing buffer, already serialize
+		DELETING // to delete existing buffer, already serialized
 	};
 
 	Chunk() : Chunk(glm::ivec3(0)) {}
@@ -23,10 +24,12 @@ struct Chunk {
 		this->pos = pos;
 		state = State::NEW;
 		find_adj = false;
+		is_modified = false;
 	}
 
 	~Chunk() {
 		mesh.clear();
+		Console::printVector("delete", pos);
 	}
 
 	void clearMesh() {

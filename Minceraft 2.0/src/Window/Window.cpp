@@ -52,6 +52,7 @@ namespace Window {
 		glfwGetWindowSize(window, &size.x, &size.y);
 
 		if (glfwWindowShouldClose(window)) {
+			std::cout << "close";
 			glfwDestroyWindow(window);
 			return false;
 		}
@@ -67,7 +68,7 @@ namespace Window {
 		static double max = 0.0;
 		if (delta > max) {
 			max = delta;
-			std::cout << "window: " << delta << "\n";
+			//std::cout << "window: " << delta << "\n";
 		}
 
 		return true;

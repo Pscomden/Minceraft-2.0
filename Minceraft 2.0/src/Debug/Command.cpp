@@ -60,7 +60,7 @@ namespace Command {
 			tree.place(chunk);
 			chunk->clearMesh();
 			ChunkMeshBuilder::buildMeshEdges(chunk, false);
-			pool.QueueJob([chunk]() {ChunkMeshBuilder::buildChunkMesh(chunk, false); });
+			pool.QueueJob([chunk]() {ChunkMeshBuilder::buildChunkMesh(chunk); });
 		}
 	}
 

@@ -12,7 +12,6 @@
 namespace ChunkManager {
 	bool init();
 	void update(glm::ivec3 player_pos);
-	void genWorld(glm::ivec3 player_pos);
 	void setRange(int horizontal_range, int vertical_range);
 	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit);
 	bool inWorldLimit(glm::ivec3 chunk_pos);
@@ -29,7 +28,6 @@ namespace ChunkManager {
 	robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>>* getChunks();
 	void serialize(std::shared_ptr<Chunk> chunk);
 	bool deserialize(std::shared_ptr<Chunk> chunk);
-	void deleteChunk(glm::ivec3 pos);
 	// TODO: add place and break block
 	Block changeBlock(glm::ivec3 pos, int id);
 	void flushChunks();

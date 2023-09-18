@@ -19,8 +19,8 @@ namespace World {
 		/*horizontal_range = 50;
 		vertical_range = 8;
 		setLimit(glm::ivec3(-5, -2, -5), glm::ivec3(5, 2, 5));*/
-		horizontal_range = 15;
-		vertical_range = 5;
+		horizontal_range = 3;
+		vertical_range = 3;
 		setLimit(glm::ivec3(-100, -100, -100), glm::ivec3(100, 100, 100));
 		seed = 10;
 		World::world_directory = world_directory;
