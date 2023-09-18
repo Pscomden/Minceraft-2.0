@@ -29,7 +29,6 @@ struct Chunk {
 
 	~Chunk() {
 		mesh.clear();
-		Console::printVector("delete", pos);
 	}
 
 	void clearMesh() {

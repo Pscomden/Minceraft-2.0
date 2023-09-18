@@ -62,7 +62,6 @@ namespace ChunkManager {
 	static int chunk_update_tick;
 
 	void pool_genChunkBlocks(std::shared_ptr<Chunk> chunk) {
-		Console::printVector("start block", chunk->pos);
 		chunk->lock.lock();
 		if (chunk->state == Chunk::State::NEW) {
 			if (!deserialize(chunk)) {
@@ -71,11 +70,9 @@ namespace ChunkManager {
 			chunk->state = Chunk::State::GENERATED;
 		}
 		chunk->lock.unlock();
-		Console::printVector("end block", chunk->pos);
 	}
 
 	void pool_genChunkMesh(std::shared_ptr<Chunk> chunk) {
-		Console::printVector("start mesh", chunk->pos);
 		chunk->lock.lock();
 		if (chunk->state != Chunk::State::DELETING) {
 			ChunkMeshBuilder::buildChunkMesh(chunk);
@@ -83,11 +80,9 @@ namespace ChunkManager {
 			chunk->state = Chunk::State::MESH;
 		}
 		chunk->lock.unlock();
-		Console::printVector("end mesh", chunk->pos);
 	}
 
 	void pool_deleteChunk(std::shared_ptr<Chunk> chunk) {
-		Console::printVector("start delete", chunk->pos);
 		chunk->lock.lock();
 		if (chunk->state != Chunk::State::DELETING) {
 			if (chunk->is_modified) {
@@ -96,7 +91,6 @@ namespace ChunkManager {
 			chunk->state = Chunk::State::DELETING;
 		}
 		chunk->lock.unlock();
-		Console::printVector("end delete", chunk->pos);
 	}
 
 	void main_genChunkBlocks() {
@@ -106,7 +100,6 @@ namespace ChunkManager {
 			std::shared_ptr<Chunk> new_chunk = std::make_shared<Chunk>(new_chunk_pos);
 			chunks.emplace(new_chunk_pos, new_chunk);
 			std::function<void()> func = [new_chunk]() {pool_genChunkBlocks(new_chunk); };
-			//Console::printVector("Queue job create", new_chunk_pos);
 			pool.QueueJob(func);
 		}
 	}
@@ -114,17 +107,20 @@ namespace ChunkManager {
 	void main_deleteChunk() {
 		if (!far_chunks.empty()) {
 			glm::ivec3 pos = far_chunks.front();
-			std::shared_ptr<Chunk> deleting_chunk = getChunk(pos);
-			std::function<void()> func = [deleting_chunk]() {pool_deleteChunk(deleting_chunk); };
-			//Console::printVector("Queue job delete", deleting_chunk->pos);
-			pool.QueueJob(func);
 			far_chunks.pop();
+			std::shared_ptr<Chunk> deleting_chunk = getChunk(pos);
+			if (deleting_chunk != nullptr && deleting_chunk->state != Chunk::State::DELETING) {
+				std::function<void()> func = [deleting_chunk]() {pool_deleteChunk(deleting_chunk); };
+				pool.QueueJob(func);
+			}
 		}
 		for (auto it = chunks.begin(); it != chunks.end(); it++) {
-			if (it->second->state == Chunk::State::DELETING) {
-				std::shared_ptr<Chunk> chunk = it->second;
+			std::shared_ptr<Chunk> chunk = it->second;
+			if (chunk == nullptr) {
+				chunks.erase(chunk->pos);
+			}
+			if (chunk->state == Chunk::State::DELETING) {
 				if (chunk->lock.try_lock()) {
-					Console::printVector("belete", chunk->pos);
 					chunks.erase(chunk->pos);
 					chunk->lock.unlock();
 					break;
@@ -138,7 +134,6 @@ namespace ChunkManager {
 			std::shared_ptr<Chunk> chunk = it->second;
 			if (chunk->state == Chunk::State::GENERATED) {
 				if (chunk->lock.try_lock()) {
-					//Console::printVector("Queue job mesh", chunk->pos);
 					std::function<void()> func = [chunk]() {pool_genChunkMesh(chunk); };
 					pool.QueueJob(func);
 					chunk->lock.unlock();
@@ -153,7 +148,6 @@ namespace ChunkManager {
 			std::shared_ptr<Chunk> chunk = it->second;
 			if (chunk->state == Chunk::State::MESH) {
 				if (chunk->lock.try_lock()) {
-					//Console::printVector("Buffer ", chunk->pos);
 					chunk->mesh.generateBuffers();
 					chunk->state = Chunk::State::BUFFERS;
 					chunk->lock.unlock();
