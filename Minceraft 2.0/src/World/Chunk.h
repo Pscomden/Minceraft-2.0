@@ -59,6 +59,7 @@ struct Chunk {
 	std::mutex lock;
 	// a chunk could generate its edge, and an adjacent one could come back
 	// and accidently add another redundant edge
+	// -x, x, -y, y, -z, z
 	bool generated_edge[6] = {false, false, false, false, false, false};
 	bool find_adj;
 };

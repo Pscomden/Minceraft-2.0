@@ -309,13 +309,23 @@ namespace ChunkMeshBuilder {
 		return adj_chunks;
 	}
 
-	void buildMeshEdges(std::shared_ptr<Chunk> chunk, bool gen_adj_edges) {
-		
+	void buildMeshEdges(std::shared_ptr<Chunk> chunk) {
+		auto adjacent_chunks = getAdjChunks(chunk->pos);
+		// this may be the first time this chunk has generated any edges
+		// or it was called by another chunk
+		pc::CardinalDirection edges[] = {pc::CardinalDirection::LEFT, pc::CardinalDirection::RIGHT,
+					pc::CardinalDirection::DOWN, pc::CardinalDirection::UP,
+					pc::CardinalDirection::FORWARD, pc::CardinalDirection::BACKWARD };
+		for (int i = 0; i < 6; i++) {
+			if (!chunk->generated_edge[i] && adjacent_chunks[i] != nullptr && adjacent_chunks[i]->state != Chunk::State::NEW) {
+				buildMeshEdge(chunk, adjacent_chunks[i], edges[i]);
+			}
+		}
 	}
-
-	void regenChunk(std::shared_ptr<Chunk> chunk, bool gen_adj_edges) {
+	
+	void regenChunk(std::shared_ptr<Chunk> chunk) {
 		ChunkMeshBuilder::buildChunkMesh(chunk);
-		buildMeshEdges(chunk, gen_adj_edges);
+		buildMeshEdges(chunk);
 	}
 
 	void setChunks(robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>>* chunks) {

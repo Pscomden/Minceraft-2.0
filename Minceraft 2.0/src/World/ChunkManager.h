@@ -21,9 +21,9 @@ namespace ChunkManager {
 	glm::ivec3 posToChunk(glm::ivec3 pos);
 	glm::ivec3 chunkRelative(glm::ivec3 pos);
 	std::shared_ptr<Chunk> getChunk(glm::ivec3 pos);
+	std::array<std::shared_ptr<Chunk>, 6> getAdjChunks(glm::ivec3 pos);
 	Block* getBlock(glm::ivec3 pos);
 	bool chunkExists(glm::ivec3 pos);
-	std::mutex* chunkLock();
 	void findEmptyChunks(glm::vec3 center_pos);
 	robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>>* getChunks();
 	void serialize(std::shared_ptr<Chunk> chunk);
