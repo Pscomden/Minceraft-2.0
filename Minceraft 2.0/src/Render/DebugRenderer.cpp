@@ -12,7 +12,7 @@ namespace DebugRenderer {
 	void renderRigidBodies() {
 		if (player != nullptr) {
 			LineMesh mesh;
-			mesh.addRect(Rectangle(player->getPos(), player->getSize()), glm::vec3(1.0f));
+			mesh.addRect(Rect(player->getPos(), player->getSize()), glm::vec3(1.0f));
 			mesh.generateBuffers();
 			mesh.render();
 		}
@@ -23,11 +23,11 @@ namespace DebugRenderer {
 		glm::ivec3 pos = ChunkManager::posToChunk(glm::round(player->getPos()));
 		glm::ivec3 index{};
 		glm::ivec3 chunk_size = glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
-		mesh.addRect(Rectangle(pos * chunk_size + (chunk_size / 2), chunk_size), glm::vec3(1.0f, 0.0f, 0.0f));
+		mesh.addRect(Rect(pos * chunk_size + (chunk_size / 2), chunk_size), glm::vec3(1.0f, 0.0f, 0.0f));
 		for (index.x = pos.x - 1; index.x <= pos.x + 1; index.x++) {
 			for (index.y = pos.y - 1; index.y <= pos.y + 1; index.y++) {
 				for (index.z = pos.z - 1; index.z <= pos.z + 1; index.z++) {
-					//mesh.addRect(Rectangle(index * chunk_size, chunk_size), glm::vec3(1.0f, 0.0f, 0.0f));
+					//mesh.addRect(Rect(index * chunk_size, chunk_size), glm::vec3(1.0f, 0.0f, 0.0f));
 				}
 			}
 		}
@@ -42,7 +42,7 @@ namespace DebugRenderer {
 		glm::ivec3 index{};
 		glm::ivec3 chunk_size = glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
 		glm::ivec3 range = World::getRange() * chunk_size;
-		mesh.addRect(Rectangle(pos * chunk_size + (chunk_size / 2), range), glm::vec3(0.0f, 0.0f, 1.0f));
+		mesh.addRect(Rect(pos * chunk_size + (chunk_size / 2), range), glm::vec3(0.0f, 0.0f, 1.0f));
 		mesh.generateBuffers();
 		mesh.render();
 	}
@@ -58,7 +58,7 @@ namespace DebugRenderer {
 		glm::ivec3 middle = ((glm::vec3)(limit.second + limit.first) / 2.0f) * (glm::vec3)chunk_size + (glm::vec3)(chunk_size / 2);
 		// 0 - 0 must be at least 1
 		glm::ivec3 size = (limit.second - limit.first) * chunk_size + chunk_size;
-		mesh.addRect(Rectangle(middle, size), glm::vec3(0.0f, 1.0f, 0.0f));
+		mesh.addRect(Rect(middle, size), glm::vec3(0.0f, 1.0f, 0.0f));
 		mesh.generateBuffers();
 		mesh.render();
 	}
@@ -71,7 +71,7 @@ namespace DebugRenderer {
 		stats << std::fixed << "Position: " << std::setprecision(5) << player->getPos().x << " " << std::setprecision(5) << player->getPos().y << " " << std::setprecision(5) << player->getPos().z <<
 			" Chunk: " << chunk_pos.x << " " << chunk_pos.y << " " << chunk_pos.z <<
 			" Relative: " << relative.x << " " << relative.y << " " << relative.z;
-		TextRenderer::renderText(stats.str(), 32, Window::getSize().y - 32, 24.0f / 48.0f, glm::vec3(1.0f));
+		TextRenderer::renderText(stats.str(), 32, Window::getSize().y - 32, 48.0f / 48.0f, glm::vec3(1.0f));
 	}
 
 	void renderCommand() {

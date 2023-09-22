@@ -103,7 +103,7 @@ namespace InputHandler {
 		}
 	}
 
-	void updateCamera(float delta_time) {
+	void updateCamera(double delta_time) {
 		if (Camera::getMode() == Camera::Mode::DETACHED) {
 			float camera_speed = 5.0f;
 			if (Input::keyHold(GLFW_KEY_J)) {

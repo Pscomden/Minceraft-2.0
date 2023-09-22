@@ -61,6 +61,7 @@ namespace ChunkManager {
 	static bool cubic_chunks;
 	static int chunk_update_tick;
 	static glm::ivec3 player_pos; // reset every update
+	static const int CHUNKS_PER_ITER = 100;
 
 	void pool_genChunkBlocks(std::shared_ptr<Chunk> chunk) {
 		chunk->lock.lock();
@@ -149,9 +150,6 @@ namespace ChunkManager {
 					}
 				}
 			}
-		}
-		for (auto it = chunks.begin(); it != chunks.end(); it++) {
-			std::shared_ptr<Chunk> chunk = it->second;
 			// generate outer mesh
 			if (chunk->state == Chunk::State::MESH ||
 				chunk->state == Chunk::State::BUFFERS
@@ -196,9 +194,9 @@ namespace ChunkManager {
 
 	bool init() {
 		seed = 10;
-		world_directory = "";
+		world_directory = "./saves/World/chunks";
 		first_frame = true;
-		chunk_update_tick = 5;
+		chunk_update_tick = 1;
 		
 		deleting_chunks = false;
 		updating = false;
@@ -210,7 +208,8 @@ namespace ChunkManager {
 
 		WorldBuilder::setSeed(seed);
 		findEmptyChunks(glm::ivec3(0, 0, 0));
-
+		std::filesystem::create_directory(world_directory);
+		
 		return true;
 	}
 
@@ -246,7 +245,7 @@ namespace ChunkManager {
 				for (pos.z = start.z; pos.z <= end.z; pos.z++) {
 					if (inWorldLimit(pos) && !chunkExists(pos)) {
 						float distance = glm::distance(center_pos, (glm::vec3)(pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) + glm::ivec3(pc::c_length, pc::c_height, pc::c_width) / 2));
-						if (distance <= (range.x * pc::c_length / 2.0f)) {
+						if (distance <= (range.x * pc::c_length / 2.0f) || true) {
 							empty_chunks.push_back(pos);
 							distances.push_back(distance);
 						}
@@ -286,6 +285,7 @@ namespace ChunkManager {
 	}
 
 	void update(glm::ivec3 new_player_pos) {
+		std::cout << chunks.size() << "\n";
 		player_pos = new_player_pos;
 		// check if update tick!
 		static int cur_tick = 1;

@@ -21,7 +21,7 @@ public:
 	}
 	void render();
 	void addLine(glm::vec3 start, glm::vec3 end, glm::vec3 color);
-	void addRect(const Rectangle& rect, glm::vec3 color);
-	void addGridRect(const Rectangle& rect, float spacing, glm::vec3 color);
+	void addRect(const Rect& rect, glm::vec3 color);
+	void addGridRect(const Rect& rect, float spacing, glm::vec3 color);
 	void generateBuffers();
 };

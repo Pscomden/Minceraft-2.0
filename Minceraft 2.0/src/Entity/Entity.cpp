@@ -1,6 +1,6 @@
 #include "Entity.h"
 
-Entity::Entity(glm::vec3 pos) : rigid_body(glm::vec3(0.0f), glm::vec3(0.0f)) {
+Entity::Entity(glm::dvec3 pos) : rigid_body(glm::vec3(0.0f), glm::vec3(0.0f)) {
 	this->pos = pos;
 	size = glm::vec3(1.0f, 1.0f, 1.0f);
 	direction = glm::vec3(0.0f);
@@ -12,16 +12,16 @@ Entity::Entity(glm::vec3 pos) : rigid_body(glm::vec3(0.0f), glm::vec3(0.0f)) {
 	running = false;
 }
 
-void Entity::update(float delta_time) {
+void Entity::update(double delta_time) {
 	
 	checkCollision(velocity * delta_time);
 }
 
-void Entity::addPos(glm::vec3 offset) {
+void Entity::addPos(glm::dvec3 offset) {
 	pos += offset;
 }
 
-void Entity::setPos(glm::vec3 new_pos) {
+void Entity::setPos(glm::dvec3 new_pos) {
 	pos = new_pos;
 }
 
@@ -29,7 +29,7 @@ void Entity::jump() {
 	input_jump = true;
 }
 
-glm::vec3& Entity::getPos() {
+glm::dvec3& Entity::getPos() {
 	return pos;
 }
 
@@ -37,11 +37,11 @@ void Entity::run() {
 	running = true;
 }
 
-glm::vec3 Entity::getSize() {
+glm::dvec3 Entity::getSize() {
 	return size;
 }
 
-glm::vec3 Entity::getVelocity() {
+glm::dvec3 Entity::getVelocity() {
 	return glm::vec3();
 }
 
@@ -49,24 +49,24 @@ Entity::Type Entity::getType() {
 	return type;
 }
 
-void Entity::move(glm::vec3 direction) {
+void Entity::move(glm::dvec3 direction) {
 	this->direction += direction;
 }
 
-void Entity::checkCollision(glm::vec3 distance) {
+void Entity::checkCollision(glm::dvec3 distance) {
 	on_ground = false;
-	glm::vec3 new_pos = pos + distance;
+	glm::dvec3 new_pos = pos + distance;
 	rigid_body.changePos(new_pos);
-	std::vector<Rectangle> cube_hitboxes;
-	glm::ivec3 start = glm::round(new_pos - (size / 2.0f) - 0.5f);
-	glm::ivec3 end = glm::round(new_pos + (size / 2.0f) - 0.5f);
+	std::vector<Rect> cube_hitboxes;
+	glm::ivec3 start = glm::round(new_pos - (size / 2.0) - 0.5);
+	glm::ivec3 end = glm::round(new_pos + (size / 2.0) - 0.5);
 	glm::ivec3 index{};
 	for (index.x = start.x; index.x <= end.x; index.x++) {
 		for (index.y = start.y; index.y <= end.y; index.y++) {
 			for (index.z = start.z; index.z <= end.z; index.z++) {
 				Block* block = ChunkManager::getBlock(index);
 				if (block != nullptr && block->id > 0) {
-					cube_hitboxes.push_back(Rectangle((glm::vec3)index + glm::vec3(0.5f)));
+					cube_hitboxes.push_back(Rect((glm::vec3)index + glm::vec3(0.5f)));
 				}
 			}
 		}
@@ -79,7 +79,7 @@ void Entity::checkCollision(glm::vec3 distance) {
 	// X
 	new_pos.x += distance.x;
 	rigid_body.changePos(new_pos);
-	for (const Rectangle& rect : cube_hitboxes) {
+	for (const Rect& rect : cube_hitboxes) {
 		if (rigid_body.rectIntersects(rect)) {
 			new_pos.x = pos.x;
 			break;
@@ -92,7 +92,7 @@ void Entity::checkCollision(glm::vec3 distance) {
 	// Notes; this is true because top condition which is just vector + velocity stops on_ground
 	on_ground = false;
 	//std::cout << "start: " << on_ground << "\n";
-	for (const Rectangle& rect : cube_hitboxes) {
+	for (const Rect& rect : cube_hitboxes) {
 		if (rigid_body.rectIntersects(rect)) {
 			new_pos.y = pos.y;
 			if (rect.pos.y < new_pos.y) {
@@ -106,7 +106,7 @@ void Entity::checkCollision(glm::vec3 distance) {
 	// Z
 	new_pos.z += distance.z;
 	rigid_body.changePos(new_pos);
-	for (const Rectangle& rect : cube_hitboxes) {
+	for (const Rect& rect : cube_hitboxes) {
 		if (rigid_body.rectIntersects(rect)) {
 			new_pos.z = pos.z;
 			break;

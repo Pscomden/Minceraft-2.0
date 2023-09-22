@@ -17,7 +17,7 @@ namespace Renderer {
 		Shaders::useBasic();
 		Shaders::basicShader()->setMat4("MVP", matrix);
 		EntityRenderer::render();
-
+		
 		Shaders::useBasic();
 		glm::mat4 ortho_matrix = glm::ortho(0.0f, (float)Window::getSize().x, (float)Window::getSize().y, 0.0f);
 		Shaders::basicShader()->setMat4("MVP", ortho_matrix);

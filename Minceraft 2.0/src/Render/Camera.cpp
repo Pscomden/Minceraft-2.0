@@ -2,13 +2,13 @@
 
 namespace Camera {
 
-	static glm::vec3 pos;
+	static glm::dvec3 pos;
 	static double yaw;
 	static double pitch;
 	// move to settings eventually
 	static float fov;
 	static Mode mode;
-	static const float third_distance = 5.0f;
+	static const double third_distance = 5.0;
 
 	bool init() {
 		pos = glm::vec3(0.5, 0.5, 0.5);
@@ -29,8 +29,8 @@ namespace Camera {
 	}
 
 	glm::mat4 getViewMatrix() {
-		glm::vec3 direction = getDirection();
-		glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+		glm::dvec3 direction = getDirection();
+		glm::dvec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
 		return glm::lookAt(pos, pos + direction, up);
 	}
@@ -166,7 +166,7 @@ namespace Camera {
 		pos.z = player_pos.z - offset_z;
 	}
 
-	void update(glm::vec3 player_pos) {
+	void update(glm::dvec3 player_pos) {
 		if (Window::isMouseLocked()) {
 			glm::vec2 offset = Input::getPrevMouse() - Input::getMouse();
 			const float sensitivity = 0.1f;
@@ -175,7 +175,7 @@ namespace Camera {
 			case Mode::FIRST_PERSON:
 				addYaw(offset.x);
 				addPitch(offset.y);
-				setPosition(player_pos + glm::vec3(0.0f, 0.5f, 0.0f));
+				setPosition(player_pos + glm::dvec3(0.0, 0.5, 0.0));
 				break;
 			case Mode::THIRD_PERSON:
 				addYaw(offset.x);

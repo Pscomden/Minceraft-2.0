@@ -2,23 +2,15 @@
 
 namespace WorldBuilder {
 
-    static FastNoise::SmartNode<FastNoise::OpenSimplex2> height_source;
-    static FastNoise::SmartNode<FastNoise::FractalFBm> height_noise;
-    static FastNoise::SmartNode<FastNoise::OpenSimplex2> cave_source;
-    static FastNoise::SmartNode<FastNoise::FractalFBm> cave_noise;
+    static FastNoise::SmartNode<> height_noise;
+    static FastNoise::SmartNode<> cave_noise;
     static int seed;
     static robin_hood::unordered_map<glm::ivec3, std::vector<std::shared_ptr<Structure>>> structures;
 
     bool init() {
-        height_source = FastNoise::New<FastNoise::OpenSimplex2>();
-        height_noise = FastNoise::New<FastNoise::FractalFBm>();
-        height_noise->SetSource(height_source);
-        height_noise->SetOctaveCount(4);
-
-        cave_source = FastNoise::New<FastNoise::OpenSimplex2>();
-        cave_noise = FastNoise::New<FastNoise::FractalFBm>();
-        cave_noise->SetSource(cave_source);
-        cave_noise->SetOctaveCount(1);
+        height_noise = FastNoise::NewFromEncodedNodeTree("DQAFAAAAAAAAQAcAAAAAAD8AAAAAAA==");
+        cave_noise = FastNoise::NewFromEncodedNodeTree("DQADAAAAAAAAQAgAAAAAAD8AAAAAAA==");
+        
 
         return true;
     }
@@ -79,30 +71,35 @@ namespace WorldBuilder {
     void buildChunkTerrain(std::shared_ptr<Chunk> chunk) {
         float* height_map = getHeightMap(chunk->pos.x, chunk->pos.z);
         const float height_factor = 20.0f;
-        //float* cave_map = getCaveMap(chunk->pos.x, chunk->pos.y, chunk->pos.z);
+        float* cave_map = getCaveMap(chunk->pos.x, chunk->pos.y, chunk->pos.z);
         for (int x = 0; x < pc::c_length; x++) {
             for (int z = 0; z < pc::c_width; z++) {
                 int height = floor(height_map[z * pc::c_length + x] * height_factor);
                 for (int y = 0; y < pc::c_height; y++) {
-                    if ((chunk->pos.y * pc::c_height + y) == height) {
+                    int absolute_height = chunk->pos.y * pc::c_height + y;
+                    float cave_noise_threshhold = 500.0f / (500.0f - 10.0f * absolute_height);
+                    if (cave_noise_threshhold < -0.9f)
+                        cave_noise_threshhold = -0.9f;
+                    else if (cave_noise_threshhold > 1.0f)
+                        cave_noise_threshhold = 1.0f;
+                    if (absolute_height == height) {
                         chunk->blocks[x][y][z].id = 1;
                         if (rand() % 256 == 1) {
                             buildTree(chunk, chunk->pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) 
                                 + glm::ivec3(x, y + 1, z));
                         }
                     }
-                    else if ((chunk->pos.y * pc::c_height + y) > height - 4 &&
+                    else if (absolute_height > height - 4 &&
                         (chunk->pos.y * pc::c_height + y) < height) {
                         chunk->blocks[x][y][z].id = 2;
                     }
-                    else if ((chunk->pos.y * pc::c_height + y) <= height - 4) {
+                    else if (absolute_height <= height - 4) {
                         chunk->blocks[x][y][z].id = 3;
                     }
-                    /*
-                    if (cave_map[(z * pc::c_length * pc::c_height) + (y * pc::c_length) + x] > 0.5f) {
+
+                    if (cave_map[(z * pc::c_length * pc::c_height) + (y * pc::c_length) + x] > cave_noise_threshhold) {
                         chunk->blocks[x][y][z].id = 0;
                     }
-                    */
                 }
             }
         }

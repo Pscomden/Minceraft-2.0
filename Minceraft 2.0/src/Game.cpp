@@ -101,9 +101,12 @@ namespace Game {
 			return false;
 		}
 		InputHandler::update(delta_time);
-
+		auto start_time = std::chrono::high_resolution_clock::now();
 		World::update(delta_time);
-
+		auto end_time = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+		auto time = (double)((duration.count()) / 1000000.0);
+		//std::cout << time << "\n";
 		// set camera position now
 		Camera::update(World::getPlayer()->getPos());
 

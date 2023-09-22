@@ -35,5 +35,5 @@ namespace Camera {
 	void setFOV(float fov);
 	void setMode(Mode mode);
 	Mode getMode();
-	void update(glm::vec3 player_pos);
+	void update(glm::dvec3 player_pos);
 }

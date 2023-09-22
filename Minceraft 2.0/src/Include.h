@@ -20,6 +20,8 @@
 #include <filesystem>
 #include <sstream>
 #include <iterator>
+#include <tchar.h>
+#include <filesystem>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
