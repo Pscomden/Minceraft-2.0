@@ -167,4 +167,8 @@ namespace BlockTypes {
 	int nameToID(std::string name) {
 		return name_to_id[name];
 	}
+
+	bool isTrans(int id) {
+		return block_attributes[id].solid == 0;
+	}
 }

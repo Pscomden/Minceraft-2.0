@@ -34,6 +34,8 @@ struct Chunk {
 	void clearMesh() {
 		mesh.vertices.clear();
 		mesh.indices.clear();
+		trans_mesh.vertices.clear();
+		trans_mesh.indices.clear();
 		for (int i = 0; i < 6; i++) {
 			generated_edge[i] = false;
 		}
@@ -54,6 +56,7 @@ struct Chunk {
 	glm::ivec3 pos;
 	Block blocks[pc::c_length][pc::c_height][pc::c_width];
 	ChunkMesh mesh;
+	ChunkMesh trans_mesh;
 	bool is_modified;
 	State state;
 	std::mutex lock;

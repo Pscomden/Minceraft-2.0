@@ -9,7 +9,7 @@ Player::Player(glm::vec3 pos) : inv(36), cursor_item(0, 0), Entity(pos) {
 	inv_open = true;
 	rigid_body.changeSize(size);
 	type = Type::PLAYER;
-	mode = Mode::GOD;
+	mode = Mode::GHOST;
 	looking_blocks = { glm::ivec3(0) };
 	// Test items
 	for (int i = 1; i <= BlockTypes::numBlocks(); i++) {

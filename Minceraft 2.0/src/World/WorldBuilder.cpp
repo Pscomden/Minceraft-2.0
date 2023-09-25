@@ -70,21 +70,28 @@ namespace WorldBuilder {
 
     void buildChunkTerrain(std::shared_ptr<Chunk> chunk) {
         float* height_map = getHeightMap(chunk->pos.x, chunk->pos.z);
-        const float height_factor = 20.0f;
+        const float height_factor = 210.0f;
         float* cave_map = getCaveMap(chunk->pos.x, chunk->pos.y, chunk->pos.z);
+        // TODO: use these eventually
+        float cave_size = 500.0f;
+        float cave_height = 500.0f;
+        float cave_log_squishy = 10.0f;
+        int max_cave_height = floor(cave_height / cave_log_squishy);
         for (int x = 0; x < pc::c_length; x++) {
             for (int z = 0; z < pc::c_width; z++) {
                 int height = floor(height_map[z * pc::c_length + x] * height_factor);
+                //height = 0;
                 for (int y = 0; y < pc::c_height; y++) {
                     int absolute_height = chunk->pos.y * pc::c_height + y;
                     float cave_noise_threshhold = 500.0f / (500.0f - 10.0f * absolute_height);
+                    
                     if (cave_noise_threshhold < -0.9f)
                         cave_noise_threshhold = -0.9f;
                     else if (cave_noise_threshhold > 1.0f)
                         cave_noise_threshhold = 1.0f;
                     if (absolute_height == height) {
                         chunk->blocks[x][y][z].id = 1;
-                        if (rand() % 256 == 1) {
+                        if (rand() % 256 == 1 && false) {
                             buildTree(chunk, chunk->pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) 
                                 + glm::ivec3(x, y + 1, z));
                         }
@@ -97,7 +104,9 @@ namespace WorldBuilder {
                         chunk->blocks[x][y][z].id = 3;
                     }
 
-                    if (cave_map[(z * pc::c_length * pc::c_height) + (y * pc::c_length) + x] > cave_noise_threshhold) {
+                    if (cave_map[(z * pc::c_length * pc::c_height) + (y * pc::c_length) + x] > cave_noise_threshhold &&
+                        absolute_height < max_cave_height)
+                    {
                         chunk->blocks[x][y][z].id = 0;
                     }
                 }
@@ -105,12 +114,12 @@ namespace WorldBuilder {
         }
         
         delete height_map;
-        //delete cave_map;
+        delete cave_map;
     }
 
     void buildChunk(std::shared_ptr<Chunk> chunk) {
         buildChunkTerrain(chunk);
-        setStructures(chunk);
+        //setStructures(chunk);
     }
 
     void removeChunkStructPair(glm::ivec3 chunk_pos) {

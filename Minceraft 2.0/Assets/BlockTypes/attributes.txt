@@ -33,7 +33,15 @@ toughness 4
 leaves
 id 5
 drops leaves
-solid 1
+solid 0
+harvest 1
+tool axe
+toughness 1
+;
+water
+id 6
+drops water
+solid 0
 harvest 1
 tool axe
 toughness 1

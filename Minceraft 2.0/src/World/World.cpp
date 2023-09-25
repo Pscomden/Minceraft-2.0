@@ -19,14 +19,14 @@ namespace World {
 		/*horizontal_range = 50;
 		vertical_range = 8;
 		setLimit(glm::ivec3(-5, -2, -5), glm::ivec3(5, 2, 5));*/
-		horizontal_range = 15;
+		horizontal_range = 9;
 		vertical_range = 9;
 		setLimit(glm::ivec3(-100000, -100000, -100000), glm::ivec3(100000, 100000, 100000));
 		seed = 10;
 		World::world_directory = world_directory;
 		cubic_chunks = true;
 		// TODO: change to load player
-		player = std::shared_ptr<Player>(new Player(glm::vec3(0.0f, 70.0f, 0.0f)));
+		player = std::shared_ptr<Player>(new Player(glm::vec3(16.0f, 16.0f, 16.0f)));
 		entities.push_back(player);
 		//entities.push_back(std::shared_ptr<Entity>(new Entity(glm::vec3(0.0f, 70.0f, 0.0f))));
 		ChunkManager::setRange(horizontal_range, vertical_range);

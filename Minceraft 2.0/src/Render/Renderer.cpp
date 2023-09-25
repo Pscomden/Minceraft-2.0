@@ -12,7 +12,7 @@ namespace Renderer {
 		Shaders::worldShader()->setVec3("cameraPos", Camera::getPosition());
 		
 		Atlas::getAtlas()->Use();
-		ChunkRenderer::render(World::getPlayer()->getPos());
+		ChunkRenderer::render(Camera::getPosition());
 		
 		Shaders::useBasic();
 		Shaders::basicShader()->setMat4("MVP", matrix);

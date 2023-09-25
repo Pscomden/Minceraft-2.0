@@ -172,6 +172,7 @@ namespace ChunkManager {
 					}
 					chunk->find_adj = false;
 					chunk->mesh.generateBuffers();
+					chunk->trans_mesh.generateBuffers();
 					chunk->state = Chunk::State::BUFFERS;
 					chunk->lock.unlock();
 				}
@@ -185,6 +186,7 @@ namespace ChunkManager {
 			if (chunk->state == Chunk::State::MESH) {
 				if (chunk->lock.try_lock()) {
 					chunk->mesh.generateBuffers();
+					chunk->trans_mesh.generateBuffers();
 					chunk->state = Chunk::State::BUFFERS;
 					chunk->lock.unlock();
 				}
@@ -285,7 +287,7 @@ namespace ChunkManager {
 	}
 
 	void update(glm::ivec3 new_player_pos) {
-		std::cout << chunks.size() << "\n";
+		//std::cout << chunks.size() << "\n";
 		player_pos = new_player_pos;
 		// check if update tick!
 		static int cur_tick = 1;
@@ -364,7 +366,7 @@ namespace ChunkManager {
 		file_name << world_directory + "chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".bin";
 		FILE* file = fopen(file_name.str().c_str(), "wb");
 		if (file) {
-			fwrite(chunk->blocks, sizeof(short), static_cast<size_t>(pc::c_length * pc::c_height) * pc::c_width, file);
+			fwrite(chunk->blocks, sizeof(Block), static_cast<size_t>(pc::c_length * pc::c_height * pc::c_width), file);
 			fclose(file);
 		}
 		else {
@@ -377,7 +379,7 @@ namespace ChunkManager {
 		file_name << world_directory + "chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".bin";
 		FILE* file = fopen(file_name.str().c_str(), "rb");
 		if (file) {
-			fread(chunk->blocks, sizeof(short), static_cast<size_t>(pc::c_length * pc::c_height) * pc::c_width, file);
+			fread(chunk->blocks, sizeof(Block), static_cast<size_t>(pc::c_length * pc::c_height * pc::c_width), file);
 			fclose(file);
 			chunk->state = Chunk::State::GENERATED;
 			return true;
@@ -447,6 +449,7 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(pc::c_length - 1, indices.y, indices.z), pc::CardinalDirection::RIGHT);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
@@ -463,6 +466,7 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(0, indices.y, indices.z), pc::CardinalDirection::LEFT);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
@@ -479,6 +483,7 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, pc::c_height - 1, indices.z), pc::CardinalDirection::UP);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
@@ -495,6 +500,7 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, 0, indices.z), pc::CardinalDirection::DOWN);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
@@ -511,6 +517,7 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, indices.y, pc::c_width - 1), pc::CardinalDirection::BACKWARD);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
@@ -527,6 +534,7 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, indices.y, 0), pc::CardinalDirection::FORWARD);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
