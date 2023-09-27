@@ -198,7 +198,7 @@ namespace ChunkManager {
 		seed = 10;
 		world_directory = "./saves/World/chunks";
 		first_frame = true;
-		chunk_update_tick = 1;
+		chunk_update_tick = 5;
 		
 		deleting_chunks = false;
 		updating = false;

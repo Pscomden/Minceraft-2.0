@@ -70,7 +70,7 @@ namespace WorldBuilder {
 
     void buildChunkTerrain(std::shared_ptr<Chunk> chunk) {
         float* height_map = getHeightMap(chunk->pos.x, chunk->pos.z);
-        const float height_factor = 210.0f;
+        const float height_factor = 150.0f;
         float* cave_map = getCaveMap(chunk->pos.x, chunk->pos.y, chunk->pos.z);
         // TODO: use these eventually
         float cave_size = 500.0f;
@@ -91,7 +91,7 @@ namespace WorldBuilder {
                         cave_noise_threshhold = 1.0f;
                     if (absolute_height == height) {
                         chunk->blocks[x][y][z].id = 1;
-                        if (rand() % 256 == 1 && false) {
+                        if (rand() % 256 == 1 && absolute_height > 20) {
                             buildTree(chunk, chunk->pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) 
                                 + glm::ivec3(x, y + 1, z));
                         }
@@ -103,11 +103,13 @@ namespace WorldBuilder {
                     else if (absolute_height <= height - 4) {
                         chunk->blocks[x][y][z].id = 3;
                     }
-
                     if (cave_map[(z * pc::c_length * pc::c_height) + (y * pc::c_length) + x] > cave_noise_threshhold &&
                         absolute_height < max_cave_height)
                     {
                         chunk->blocks[x][y][z].id = 0;
+                    }
+                    if (chunk->blocks[x][y][z].id == 0 && absolute_height >= -50 && absolute_height <= 0) {
+                        chunk->blocks[x][y][z].id = 6;
                     }
                 }
             }

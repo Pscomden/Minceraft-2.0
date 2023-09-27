@@ -17,7 +17,7 @@ namespace ChunkRenderer {
 		float fogStart = (World::getRange().x * pc::c_length) / 2 - (pc::c_length);
 		float fogEnd = (World::getRange().x * pc::c_length) / 2;
 
-		fogEnd = 100000000.0f;
+		//fogEnd = 100000000.0f;
 
 		Shaders::worldShader()->setFloat("fogStart", fogStart);
 		Shaders::worldShader()->setFloat("fogEnd", fogEnd);

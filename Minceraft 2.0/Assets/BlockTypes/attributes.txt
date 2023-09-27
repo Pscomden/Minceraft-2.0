@@ -46,3 +46,11 @@ harvest 1
 tool axe
 toughness 1
 ;
+sand
+id 7
+drops sand
+solid 1
+harvest 1
+tool shovel
+toughness 1
+;

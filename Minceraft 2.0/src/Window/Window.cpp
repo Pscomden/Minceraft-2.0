@@ -68,7 +68,7 @@ namespace Window {
 		static double max = 0.0;
 		if (delta > max) {
 			max = delta;
-			//std::cout << "window: " << delta << "\n";
+			std::cout << "window: " << delta << "\n";
 		}
 
 		return true;
