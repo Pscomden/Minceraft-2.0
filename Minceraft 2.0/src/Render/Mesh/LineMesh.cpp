@@ -17,7 +17,7 @@ void LineMesh::addLine(glm::vec3 start, glm::vec3 end, glm::vec3 color) {
 	indices.insert(indices.end(), std::begin(new_indices), std::end(new_indices));
 }
 
-void LineMesh::addRect(const Rectangle& rect, glm::vec3 color) {
+void LineMesh::addRect(const Rect& rect, glm::vec3 color) {
 	glm::vec3 start = rect.pos - rect.size / 2.0f;
 	glm::vec3 end = rect.pos + rect.size / 2.0f;
 	addLine(start, glm::vec3(end.x, start.y, start.z), color);
@@ -34,7 +34,7 @@ void LineMesh::addRect(const Rectangle& rect, glm::vec3 color) {
 	addLine(glm::vec3(start.x, end.y, end.z), glm::vec3(start.x, start.y, end.z), color);
 }
 
-void LineMesh::addGridRect(const Rectangle& rect, float spacing, glm::vec3 color) {
+void LineMesh::addGridRect(const Rect& rect, float spacing, glm::vec3 color) {
 	/*glm::vec3 start = rect.pos - rect.size / 2.0f;
 	glm::vec3 end = rect.pos + rect.size / 2.0f;
 	glm::ivec3 num_lines = glm::floor(rect.size / spacing);

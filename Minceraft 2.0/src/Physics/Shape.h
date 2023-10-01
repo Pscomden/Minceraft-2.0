@@ -2,14 +2,14 @@
 
 #include "../Include.h"
 
-class Rectangle {
+class Rect {
 public:
-	Rectangle(glm::vec3 pos) : pos(pos), size(glm::vec3(1.0f))
+	Rect(glm::vec3 pos) : pos(pos), size(glm::vec3(1.0f))
 	{
 
 	}
 
-	Rectangle(glm::vec3 pos, glm::vec3 size) : pos(pos), size(size)
+	Rect(glm::vec3 pos, glm::vec3 size) : pos(pos), size(size)
 	{
 
 	}
@@ -23,7 +23,7 @@ public:
 	}
 
     //https://gamedev.stackexchange.com/questions/60505/how-to-check-for-cube-collisions
-	bool rectIntersects(const Rectangle& other) const {
+	bool rectIntersects(const Rect& other) const {
         return (abs(pos.x - other.pos.x) < size.x / 2.0f + other.size.x / 2.0f &&
             abs(pos.y - other.pos.y) < size.y / 2.0f + other.size.y / 2.0f &&
             abs(pos.z - other.pos.z) < size.z / 2.0f + other.size.z / 2.0f);

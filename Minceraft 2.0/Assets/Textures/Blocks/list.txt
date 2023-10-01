@@ -12,3 +12,4 @@ stone
 log_side
 log_top
 leaves
+water

@@ -5,27 +5,29 @@
 
 1. If the camera has left the local chunk, get list of empty chunks
 2. Also get list of chunks to delete
-Pick one a frame (for now)
+Pick one function per frame or tick (for now)
 	---
 	1. Create empty chunk in the chunks list, set state to new
 	2. Queue the chunk to generate blocks, state now generated
-	3. Look for chunk with find_adj true
-	4. For each vertices wall the chunk hasn't made
-	5. Set adj chunk that hasn't generated relevant wall find_adj to true
-	6. Generate wall vertices, set generated_edge[side] to true
-	7. Once all are generated, set find_adj to false
 	---
 	1. Set a single delete chunk to saving status and queue serialize
 	2. Delete a chunk in deleting state
 	---
-	1. Generate a chunk's buffer on main thread, no pool
+	1. Scan for a chunk with generated state, queue to generate inner mesh vertices, status now mesh, set find_adj true
+	2. Look for chunk with find_adj true and state mesh
+	3. For each vertices wall the chunk hasn't made
+	4. Set adj chunk that hasn't generated relevant wall and NOT NEW/DELETING find_adj to true
+	5. Generate wall vertices, set generated_edge[side] to true
+	6. Once all are generated, set find_adj to false
 	---
-	1. Scan for a chunk with generated state, queue to generate inner mesh vertices, status now inner mesh, set find_adj true
+	1. Generate a chunk's buffer on main thread, no pool
+	2. Set status to buffers
 	---
 
 ----- Pool Cycles -----
 
 * Should never interact with chunks outside of the single provided!!! *
+* Each should use chunk lock!!! *
 
 Generating chunk blocks:
 1. Try to deserialize chunk from file
@@ -44,13 +46,10 @@ Deleting chunk:
 namespace ChunkManager {
 
 	static robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> chunks; // normal chunks
-	// TODO: remove pool_chunks, deprecated by having chunk exist in chunks
-	static robin_hood::unordered_map<glm::ivec3, std::shared_ptr<Chunk>> pool_chunks; // chunks being generated in the pool
 	// May be deprecated
 	static std::mutex chunk_lock; // for deleting chunks on main thread
-	static std::queue<glm::ivec3> delete_chunks; // chunks to be deleted
+	static std::queue<glm::ivec3> far_chunks; // chunks to be deleted
 	static std::vector<glm::ivec3> empty_chunks; // chunks to be created
-	static glm::ivec3 player_chunk_pos;
 	static glm::ivec3 range;
 	static glm::ivec3 start_limit;
 	static glm::ivec3 end_limit;
@@ -61,15 +60,145 @@ namespace ChunkManager {
 	static bool updating;
 	static bool cubic_chunks;
 	static int chunk_update_tick;
+	static glm::ivec3 player_pos; // reset every update
+	static const int CHUNKS_PER_ITER = 100;
 
-	bool poolChunkExists(glm::ivec3 pos);
+	void pool_genChunkBlocks(std::shared_ptr<Chunk> chunk) {
+		chunk->lock.lock();
+		if (chunk->state == Chunk::State::NEW) {
+			if (!deserialize(chunk)) {
+				WorldBuilder::buildChunk(chunk);
+			}
+			chunk->state = Chunk::State::GENERATED;
+		}
+		chunk->lock.unlock();
+	}
+
+	void pool_genChunkMesh(std::shared_ptr<Chunk> chunk) {
+		chunk->lock.lock();
+		if (chunk->state != Chunk::State::DELETING) {
+			ChunkMeshBuilder::buildChunkMesh(chunk);
+			chunk->find_adj = true;
+			chunk->state = Chunk::State::MESH;
+		}
+		chunk->lock.unlock();
+	}
+
+	void pool_deleteChunk(std::shared_ptr<Chunk> chunk) {
+		chunk->lock.lock();
+		if (chunk->state != Chunk::State::DELETING) {
+			if (chunk->is_modified) {
+				serialize(chunk);
+			}
+			chunk->state = Chunk::State::DELETING;
+		}
+		chunk->lock.unlock();
+	}
+
+	void main_genChunkBlocks() {
+		if (!empty_chunks.empty()) {
+			glm::ivec3 new_chunk_pos = empty_chunks.back();
+			empty_chunks.pop_back();
+			std::shared_ptr<Chunk> new_chunk = std::make_shared<Chunk>(new_chunk_pos);
+			chunks.emplace(new_chunk_pos, new_chunk);
+			std::function<void()> func = [new_chunk]() {pool_genChunkBlocks(new_chunk); };
+			//Console::printVector("Queue create", new_chunk->pos);
+			pool.QueueJob(func);
+		}
+	}
+
+	void main_deleteChunk() {
+		while (!far_chunks.empty()) {
+			glm::ivec3 pos = far_chunks.front();
+			far_chunks.pop();
+			std::shared_ptr<Chunk> deleting_chunk = getChunk(pos);
+			if (deleting_chunk != nullptr && deleting_chunk->state != Chunk::State::DELETING) {
+				std::function<void()> func = [deleting_chunk]() {pool_deleteChunk(deleting_chunk); };
+				//Console::printVector("Queue delete", deleting_chunk->pos);
+				pool.QueueJob(func);
+			}
+		}
+		for (auto it = chunks.begin(); it != chunks.end(); it++) {
+			std::shared_ptr<Chunk> chunk = it->second;
+			if (chunk == nullptr) {
+				chunks.erase(chunk->pos);
+			}
+			if (chunk->state == Chunk::State::DELETING) {
+				if (chunk->lock.try_lock()) {
+					chunks.erase(chunk->pos);
+					chunk->lock.unlock();
+				}
+			}
+		}
+	}
+
+	void main_genChunkMesh() {
+		int mesh_count = 0;
+		const int max_mesh = 3;
+		for (auto it = chunks.begin(); it != chunks.end(); it++) {
+			std::shared_ptr<Chunk> chunk = it->second;
+			// generate inner mesh
+			if (chunk->state == Chunk::State::GENERATED) {
+				if (chunk->lock.try_lock()) {
+					std::function<void()> func = [chunk]() {pool_genChunkMesh(chunk); };
+					//Console::printVector("Queue mesh", chunk->pos);
+					pool.QueueJob(func);
+					chunk->lock.unlock();
+					mesh_count++;
+					if (mesh_count == max_mesh) {
+						break;
+					}
+				}
+			}
+			// generate outer mesh
+			if (chunk->state == Chunk::State::MESH ||
+				chunk->state == Chunk::State::BUFFERS
+				&& chunk->find_adj)
+			{
+				if (chunk->lock.try_lock()) {
+					ChunkMeshBuilder::buildMeshEdges(chunk);
+					auto adj_chunks = getAdjChunks(chunk->pos);
+					// to adj_chunk, chunk is opposite direction
+					const int adj_key[6] = { 1, 0, 3, 2, 5, 4 };
+					for (int i = 0; i < 6; i++) {
+						if (adj_chunks[i] != nullptr &&
+							adj_chunks[i]->state != Chunk::State::NEW &&
+							adj_chunks[i]->state != Chunk::State::DELETING)
+						{
+							if (!adj_chunks[i]->generated_edge[adj_key[i]]) {
+								adj_chunks[i]->find_adj = true;
+							}
+						}
+					}
+					chunk->find_adj = false;
+					chunk->mesh.generateBuffers();
+					chunk->trans_mesh.generateBuffers();
+					chunk->state = Chunk::State::BUFFERS;
+					chunk->lock.unlock();
+				}
+			}
+		}
+	}
+
+	void main_genChunkBuffers() {
+		for (auto it = chunks.begin(); it != chunks.end(); it++) {
+			std::shared_ptr<Chunk> chunk = it->second;
+			if (chunk->state == Chunk::State::MESH) {
+				if (chunk->lock.try_lock()) {
+					chunk->mesh.generateBuffers();
+					chunk->trans_mesh.generateBuffers();
+					chunk->state = Chunk::State::BUFFERS;
+					chunk->lock.unlock();
+				}
+			}
+		}
+	}
 
 	bool init() {
 		seed = 10;
-		world_directory = "";
+		world_directory = "./saves/World/chunks";
 		first_frame = true;
-		player_chunk_pos = glm::ivec3(0);
-		chunk_update_tick = 10;
+		chunk_update_tick = 5;
 		
 		deleting_chunks = false;
 		updating = false;
@@ -81,15 +210,9 @@ namespace ChunkManager {
 
 		WorldBuilder::setSeed(seed);
 		findEmptyChunks(glm::ivec3(0, 0, 0));
-
+		std::filesystem::create_directory(world_directory);
+		
 		return true;
-	}
-
-	void deleteChunk(std::shared_ptr<Chunk> chunk) {
-		if (chunk->is_modified) {
-			serialize(chunk);
-		}
-		chunk->state = Chunk::State::DELETING;
 	}
 
 	bool inWorldLimit(glm::ivec3 chunk_pos) {
@@ -110,92 +233,10 @@ namespace ChunkManager {
 			player_pos.z > (chunk_pos.z + (range.z / 2)));
 	}
 
-	void deleteEmptyChunks(glm::ivec3 chunk_pos) {
-		deleting_chunks = true;
-		if (chunk_lock.try_lock()) {
-			for (auto& pair : chunks) {
-				if (pair.second == nullptr) {
-					chunks.erase(pair.first);
-				}
-				else if (pair.second->state == Chunk::State::DELETING) {
-					if (pair.second->lock.try_lock()) {
-						pair.second->lock.unlock();
-						chunks.erase(pair.first);
-					}
-				}
-				else if (!inRange(pair.first, chunk_pos)) {
-					std::shared_ptr<Chunk> chunk = pair.second;
-					std::function<void()> func = [chunk]() {deleteChunk(chunk); };
-					pool.QueueJob(func);
-				}
-			}
-			chunk_lock.unlock();
-		}
-		deleting_chunks = false;
-	}
-
-	void generateChunkBuffers() {
-		// only once per frame
-		// building meshes on main thread is a lot of work
-		// TODO: see if locks are necessary
-		if (chunk_lock.try_lock()) {
-			for (auto& pair : chunks) {
-				if (pair.second) {
-					if (pair.second->lock.try_lock()) {
-						if (pair.second->state == Chunk::State::FULL_MESH) {
-							pair.second->mesh.generateBuffers();
-							pair.second->state = Chunk::State::BUFFERS;
-						}
-						else if (pair.second->state == Chunk::State::INNER_MESH) {
-							ChunkMeshBuilder::buildMeshEdges(pair.second, true);
-							pair.second->mesh.generateBuffers();
-							pair.second->state = Chunk::State::BUFFERS;
-						}
-						pair.second->lock.unlock();
-					}
-				}
-			}
-			chunk_lock.unlock();
-		}
-	}
-
-	void createChunk(std::shared_ptr<Chunk> chunk) {
-		// Don't create a chunk when player moved out of range
-		if (!inRange(chunk->pos, player_chunk_pos)) {
-			chunk->state = Chunk::State::DELETING;
-			return;
-		}
-		if (!deserialize(chunk)) {
-			WorldBuilder::buildChunk(chunk);
-		}
-		ChunkMeshBuilder::buildChunkMesh(chunk, false);
-	}
-
-	void createChunks() {
-		if (!empty_chunks.empty()) {
-			glm::ivec3 new_chunk_pos = empty_chunks.back();
-			if (!poolChunkExists(new_chunk_pos)) {
-				std::shared_ptr<Chunk> new_chunk = std::shared_ptr<Chunk>(new Chunk(new_chunk_pos));
-				//std::cout << "New Chunk at " << new_chunk->toString() << "\n";
-				empty_chunks.pop_back();
-				std::function<void()> func = [new_chunk]() {createChunk(new_chunk); };
-				pool.QueueJob(func);
-				pool_chunks.emplace(new_chunk->pos, new_chunk);
-			}
-		}
-	}
-
 	// TODO: replace with finding all empty chunks linearly and sorting by distance
 	// https://stackoverflow.com/review/suggested-edits/1416384
 	void findEmptyChunks(glm::vec3 center_pos) {
 		glm::ivec3 chunk_pos = posToChunk(center_pos);
-		static glm::ivec3 old_pos = chunk_pos;
-		if (chunk_pos != old_pos) {
-			old_pos = chunk_pos;
-		}
-		else {
-			return;
-		}
 		glm::ivec3 start = chunk_pos - (range / 2);
 		glm::ivec3 end = chunk_pos + (range / 2);
 		glm::ivec3 pos;
@@ -205,8 +246,11 @@ namespace ChunkManager {
 			for (pos.y = start.y; pos.y <= end.y; pos.y++) {
 				for (pos.z = start.z; pos.z <= end.z; pos.z++) {
 					if (inWorldLimit(pos) && !chunkExists(pos)) {
-						empty_chunks.push_back(pos);
-						distances.push_back(glm::distance(center_pos, (glm::vec3)(pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) + glm::ivec3(pc::c_length, pc::c_height, pc::c_width) / 2)));
+						float distance = glm::distance(center_pos, (glm::vec3)(pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) + glm::ivec3(pc::c_length, pc::c_height, pc::c_width) / 2));
+						if (distance <= (range.x * pc::c_length / 2.0f) || true) {
+							empty_chunks.push_back(pos);
+							distances.push_back(distance);
+						}
 					}
 				}
 			}
@@ -231,73 +275,85 @@ namespace ChunkManager {
 		}
 	}
 
-	void update(glm::ivec3 player_pos) {
+	void findFarChunks(glm::ivec3 center_pos) {
+		far_chunks = std::queue<glm::ivec3>();
+		glm::ivec3 center_chunk_pos = posToChunk(center_pos);
+		for (auto it = chunks.begin(); it != chunks.end(); it++) {
+			std::shared_ptr<Chunk> chunk = it->second;
+			if (!inRange(chunk->pos, center_chunk_pos)) {
+				far_chunks.push(chunk->pos);
+			}
+		}
+	}
+
+	void update(glm::ivec3 new_player_pos) {
+		//std::cout << chunks.size() << "\n";
+		player_pos = new_player_pos;
+		// check if update tick!
 		static int cur_tick = 1;
 		bool is_update_tick = false;
-		if (cur_tick == chunk_update_tick) {
+		if (cur_tick > chunk_update_tick) {
 			cur_tick = 1;
 			is_update_tick = true;
 		}
 		cur_tick++;
 		int jobs = pool.numJobs();
-		if (jobs > 0)
-			Console::num("Num jobs: ", jobs);
+		if (jobs > 0) {
+			Console::num("Num jobs:", jobs);
+		}
 		if (!is_update_tick) {
 			return;
 		}
-		player_chunk_pos = posToChunk(player_pos);
-		// TODO: change to loop through all chunks once per frame
-		generateChunkBuffers();
-		deleteEmptyChunks(player_chunk_pos);
-		findEmptyChunks(player_pos);
-		createChunks();
-		auto it = pool_chunks.begin();
-		bool once = true;
-		for (; it != pool_chunks.end(); it++) {
-			if ((*it).second->state == Chunk::State::INNER_MESH && once) {
-				chunks.emplace((*it).second->pos, (*it).second);
-				pool_chunks.erase(it);
-				// cap adding chunks to frame rate because otherwise there are border issues
-				// TODO: solve this somehow!!! I'm too tired rn. 7/27 need to watch pbg do McDonald's Happy Meal Maker Toy
-				once = false;
-			}
-			else if ((*it).second->state == Chunk::State::DELETING) {
-				pool_chunks.erase(it);
-			}
-		}
-	}
+		
+		auto start_time = std::chrono::high_resolution_clock::now();
 
-	void genWorld(glm::ivec3 player_pos) {
+		// see if out of chunk, get empty/far chunks
 		glm::ivec3 chunk_pos = posToChunk(player_pos);
-		chunk_pos.y = 0;
-		glm::ivec3 pos{};
-		for (pos.x = chunk_pos.x - 2; pos.x <= chunk_pos.x + 2; pos.x++) {
-			for (pos.z = chunk_pos.z - 2; pos.z <= chunk_pos.z + 2; pos.z++) {
-				if (!chunkExists(pos)) {
-					std::shared_ptr<Chunk> new_chunk = std::shared_ptr<Chunk>(new Chunk(pos));
-					if (!deserialize(new_chunk))
-						WorldBuilder::buildChunk(new_chunk);
-					chunks.emplace(pos, new_chunk);
-				}
-			}
+		static glm::ivec3 old_pos = chunk_pos;
+		if (chunk_pos != old_pos) {
+			old_pos = chunk_pos;
+			findEmptyChunks(player_pos);
+			findFarChunks(player_pos);
+			return;
 		}
-		for (auto& pair : chunks) {
-			ChunkMeshBuilder::buildChunkMesh(pair.second);
-			pair.second->mesh.generateBuffers();
-			pair.second->state = Chunk::State::BUFFERS;
+
+		static int update_func = 0;
+		//std::cout << chunks.size() << "\n";
+		switch (update_func) {
+		case 0:
+			main_genChunkBlocks();
+			break;
+		case 1:
+			main_deleteChunk();
+			break;
+		case 2:
+			main_genChunkMesh();
+			break;
+		case 3:
+			main_genChunkBuffers();
 		}
+		update_func++;
+		if (update_func == 4) {
+			update_func = 0;
+		}
+
+		auto end_time = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+		auto delta = (double)((duration.count()) / 1000000.0);
+		//std::cout << std::fixed << delta << "\n";
 	}
 
 	void setRange(int horizontal_range, int vertical_range) {
 		ChunkManager::range = glm::ivec3(horizontal_range, vertical_range, horizontal_range);
+		ChunkManager::findEmptyChunks(player_pos);
+		ChunkManager::findFarChunks(player_pos);
 	}
 
 	void setLimit(glm::ivec3 start_limit, glm::ivec3 end_limit) {
 		ChunkManager::start_limit = start_limit;
 		ChunkManager::end_limit = end_limit;
-		ChunkManager::deleteEmptyChunks(player_chunk_pos);
-		ChunkManager::findEmptyChunks(player_chunk_pos);
-		ChunkManager::createChunks();
+		ChunkManager::findEmptyChunks(player_pos);
+		ChunkManager::findFarChunks(player_pos);
 	}
 
 	void setSeed(int seed) {
@@ -318,7 +374,7 @@ namespace ChunkManager {
 		file_name << world_directory + "chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".bin";
 		FILE* file = fopen(file_name.str().c_str(), "wb");
 		if (file) {
-			fwrite(chunk->blocks, sizeof(short), static_cast<size_t>(pc::c_length * pc::c_height) * pc::c_width, file);
+			fwrite(chunk->blocks, sizeof(Block), static_cast<size_t>(pc::c_length * pc::c_height * pc::c_width), file);
 			fclose(file);
 		}
 		else {
@@ -331,18 +387,12 @@ namespace ChunkManager {
 		file_name << world_directory + "chunks/" << chunk->pos.x << " " << chunk->pos.y << " " << chunk->pos.z << ".bin";
 		FILE* file = fopen(file_name.str().c_str(), "rb");
 		if (file) {
-			fread(chunk->blocks, sizeof(short), static_cast<size_t>(pc::c_length * pc::c_height) * pc::c_width, file);
+			fread(chunk->blocks, sizeof(Block), static_cast<size_t>(pc::c_length * pc::c_height * pc::c_width), file);
 			fclose(file);
 			chunk->state = Chunk::State::GENERATED;
 			return true;
 		}
 		return false;
-	}
-
-	void deleteChunk(glm::ivec3 pos) {
-		if (chunks.find(pos) != chunks.end()) {
-			delete_chunks.push(pos);
-		}
 	}
 	
 	std::shared_ptr<Chunk> getChunk(glm::ivec3 pos) {
@@ -352,6 +402,18 @@ namespace ChunkManager {
 		return nullptr;
 	}
 
+	std::array<std::shared_ptr<Chunk>, 6> getAdjChunks(glm::ivec3 pos) {
+		std::array<std::shared_ptr<Chunk>, 6> adj_chunks;
+		adj_chunks[0] = getChunk(pos + glm::ivec3(-1, 0, 0));
+		adj_chunks[1] = getChunk(pos + glm::ivec3(1, 0, 0));
+		adj_chunks[2] = getChunk(pos + glm::ivec3(0, -1, 0));
+		adj_chunks[3] = getChunk(pos + glm::ivec3(0, 1, 0));
+		adj_chunks[4] = getChunk(pos + glm::ivec3(0, 0, -1));
+		adj_chunks[5] = getChunk(pos + glm::ivec3(0, 0, 1));
+
+		return adj_chunks;
+	}
+
 	Block* getBlock(glm::ivec3 pos) {
 		std::shared_ptr<Chunk> chunk = getChunk(posToChunk(pos));
 		if (chunk == nullptr) {
@@ -359,10 +421,6 @@ namespace ChunkManager {
 		}
 		glm::ivec3 indices = chunkRelative(pos);
 		return &chunk->blocks[indices.x][indices.y][indices.z];
-	}
-
-	bool poolChunkExists(glm::ivec3 pos) {
-		return pool_chunks.find(pos) != pool_chunks.end();
 	}
 
 	bool chunkExists(glm::ivec3 pos) {
@@ -377,17 +435,6 @@ namespace ChunkManager {
 		return &chunks;
 	}
 
-	std::array<std::shared_ptr<Chunk>, 4> findAdjacentChunks(std::shared_ptr<Chunk> chunk) {
-		std::array<std::shared_ptr<Chunk>, 4> adj_chunks{ nullptr };
-		if (chunk != nullptr) {
-			adj_chunks[0] = getChunk(chunk->pos + glm::ivec3(-1, 0, 0));
-			adj_chunks[1] = getChunk(chunk->pos + glm::ivec3(1, 0, 0));
-			adj_chunks[2] = getChunk(chunk->pos + glm::ivec3(0, 0, -1));
-			adj_chunks[3] = getChunk(chunk->pos + glm::ivec3(0, 0, 1));
-		}
-		return adj_chunks;
-	}
-
 	Block changeBlock(glm::ivec3 pos, int id) {
 		Block block = Block(0);
 		std::shared_ptr<Chunk> chunk = getChunk(posToChunk(pos));
@@ -395,11 +442,13 @@ namespace ChunkManager {
 			glm::ivec3 indices = chunkRelative(pos);
 			block = chunk->blocks[indices.x][indices.y][indices.z];
 			chunk->blocks[indices.x][indices.y][indices.z].id = id;
+			chunk->is_modified = true;
 			chunk->clearMesh();
-			ChunkMeshBuilder::buildMeshEdges(chunk, false);
+
+			ChunkMeshBuilder::buildMeshEdges(chunk);
 			// don't want to regen buffers now
 			chunk->state = Chunk::State::BUFFERS;
-			pool.QueueJob([chunk]() {ChunkMeshBuilder::buildChunkMesh(chunk, false); });
+			pool.QueueJob([chunk]() {pool_genChunkMesh(chunk); });
 			// on edge of chunk
 			if (indices.x == 0) {
 				std::shared_ptr<Chunk> adj_chunk = getChunk(chunk->pos + glm::ivec3(-1, 0, 0));
@@ -408,12 +457,13 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(pc::c_length - 1, indices.y, indices.z), pc::CardinalDirection::RIGHT);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
-						ChunkMeshBuilder::buildMeshEdges(adj_chunk, false);
+						ChunkMeshBuilder::buildMeshEdges(adj_chunk);
 						adj_chunk->state = Chunk::State::BUFFERS;
-						pool.QueueJob([adj_chunk]() {ChunkMeshBuilder::buildChunkMesh(adj_chunk, false); });
+						pool.QueueJob([adj_chunk]() {pool_genChunkMesh(adj_chunk); });
 					}
 				}
 			}
@@ -424,12 +474,13 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(0, indices.y, indices.z), pc::CardinalDirection::LEFT);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
-						ChunkMeshBuilder::buildMeshEdges(adj_chunk, false);
+						ChunkMeshBuilder::buildMeshEdges(adj_chunk);
 						adj_chunk->state = Chunk::State::BUFFERS;
-						pool.QueueJob([adj_chunk]() {ChunkMeshBuilder::buildChunkMesh(adj_chunk, false); });
+						pool.QueueJob([adj_chunk]() {pool_genChunkMesh(adj_chunk); });
 					}
 				}
 			}
@@ -440,12 +491,13 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, pc::c_height - 1, indices.z), pc::CardinalDirection::UP);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
-						ChunkMeshBuilder::buildMeshEdges(adj_chunk, false);
+						ChunkMeshBuilder::buildMeshEdges(adj_chunk);
 						adj_chunk->state = Chunk::State::BUFFERS;
-						pool.QueueJob([adj_chunk]() {ChunkMeshBuilder::buildChunkMesh(adj_chunk, false); });
+						pool.QueueJob([adj_chunk]() {pool_genChunkMesh(adj_chunk); });
 					}
 				}
 			}
@@ -456,12 +508,13 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, 0, indices.z), pc::CardinalDirection::DOWN);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
-						ChunkMeshBuilder::buildMeshEdges(adj_chunk, false);
+						ChunkMeshBuilder::buildMeshEdges(adj_chunk);
 						adj_chunk->state = Chunk::State::BUFFERS;
-						pool.QueueJob([adj_chunk]() {ChunkMeshBuilder::buildChunkMesh(adj_chunk, false); });
+						pool.QueueJob([adj_chunk]() {pool_genChunkMesh(adj_chunk); });
 					}
 				}
 			}
@@ -472,12 +525,13 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, indices.y, pc::c_width - 1), pc::CardinalDirection::BACKWARD);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
-						ChunkMeshBuilder::buildMeshEdges(adj_chunk, false);
+						ChunkMeshBuilder::buildMeshEdges(adj_chunk);
 						adj_chunk->state = Chunk::State::BUFFERS;
-						pool.QueueJob([adj_chunk]() {ChunkMeshBuilder::buildChunkMesh(adj_chunk, false); });
+						pool.QueueJob([adj_chunk]() {pool_genChunkMesh(adj_chunk); });
 					}
 				}
 			}
@@ -488,17 +542,16 @@ namespace ChunkManager {
 					if (id == 0) {
 						ChunkMeshBuilder::addSingleFace(adj_chunk, glm::ivec3(indices.x, indices.y, 0), pc::CardinalDirection::FORWARD);
 						adj_chunk->mesh.generateBuffers();
+						adj_chunk->trans_mesh.generateBuffers();
 					}
 					else {
 						adj_chunk->clearMesh();
-						ChunkMeshBuilder::buildMeshEdges(adj_chunk, false);
+						ChunkMeshBuilder::buildMeshEdges(adj_chunk);
 						adj_chunk->state = Chunk::State::BUFFERS;
-						pool.QueueJob([adj_chunk]() {ChunkMeshBuilder::buildChunkMesh(adj_chunk, false); });
+						pool.QueueJob([adj_chunk]() {pool_genChunkMesh(adj_chunk); });
 					}
 				}
 			}
-
-			chunk->is_modified = true;
 		}
 
 		return block;
@@ -532,9 +585,6 @@ namespace ChunkManager {
 	}
 
 	void flushChunks() {
-		while (!chunk_lock.try_lock()) {
-
-		}
 		for (auto& pair : chunks) {
 			if (pair.second != nullptr) {
 				while (!pair.second->lock.try_lock()) {
@@ -548,7 +598,6 @@ namespace ChunkManager {
 			}
 		}
 		chunks.clear();
-		chunk_lock.unlock();
 	}
 
 	bool deletingChunks() {

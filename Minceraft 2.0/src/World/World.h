@@ -8,7 +8,7 @@
 namespace World {
 	void start(std::string world_directory);
 	void exit();
-	void update(float delta_time);
+	void update(double delta_time);
 	std::shared_ptr<Player> getPlayer();
 	std::vector<std::shared_ptr<Entity>>* getEntities();
 	void setHorizontalRange(int range);

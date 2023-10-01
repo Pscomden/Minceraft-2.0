@@ -17,7 +17,7 @@ public:
 
 	Player(glm::vec3 pos);
 	~Player();
-	void update(float delta_time);
+	void update(double delta_time);
 	// TODO: change to frame 1
 	void tryBreakBlock();
 	void tryPlaceBlock();

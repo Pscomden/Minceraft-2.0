@@ -59,8 +59,8 @@ namespace Command {
 			tree.setRandomTree(pos, 123);
 			tree.place(chunk);
 			chunk->clearMesh();
-			ChunkMeshBuilder::buildMeshEdges(chunk, false);
-			pool.QueueJob([chunk]() {ChunkMeshBuilder::buildChunkMesh(chunk, false); });
+			ChunkMeshBuilder::buildMeshEdges(chunk);
+			pool.QueueJob([chunk]() {ChunkMeshBuilder::buildChunkMesh(chunk); });
 		}
 	}
 

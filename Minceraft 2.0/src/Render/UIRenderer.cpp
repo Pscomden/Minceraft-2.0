@@ -92,7 +92,7 @@ namespace UIRenderer {
 	}
 
 	void renderAttributes() {
-		if (!player->isInvOpen()) {
+		if (!player->isInvOpen() && Camera::getMode() == Camera::Mode::FIRST_PERSON) {
 			BasicMesh mesh;
 			// cross hair
 			std::array<glm::vec2, 2> uvs = BlockTypes::getFaceUVs("cross_hair");

@@ -52,6 +52,7 @@ namespace Window {
 		glfwGetWindowSize(window, &size.x, &size.y);
 
 		if (glfwWindowShouldClose(window)) {
+			std::cout << "close";
 			glfwDestroyWindow(window);
 			return false;
 		}

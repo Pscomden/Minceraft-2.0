@@ -9,7 +9,7 @@ Player::Player(glm::vec3 pos) : inv(36), cursor_item(0, 0), Entity(pos) {
 	inv_open = true;
 	rigid_body.changeSize(size);
 	type = Type::PLAYER;
-	mode = Mode::GOD;
+	mode = Mode::GHOST;
 	looking_blocks = { glm::ivec3(0) };
 	// Test items
 	for (int i = 1; i <= BlockTypes::numBlocks(); i++) {
@@ -22,7 +22,7 @@ Player::~Player() {
 	
 }
 
-void Player::update(float delta_time) {
+void Player::update(double delta_time) {
 	switch (mode) {
 	case Mode::SURVIVAL:
 		moveSurvival(delta_time);
@@ -164,10 +164,10 @@ void Player::moveSurvival(float delta_time) {
 }
 
 void Player::moveGod() {
-	const float INITIAL_SPEED = 5.0f;
-	const float INITIAL_JUMP = 10.0f;
-	const float ACCELERATION = 10.0f;
-	const float GRAVITY = 9.8f;
+	const double INITIAL_SPEED = 5.0f;
+	const double INITIAL_JUMP = 10.0f;
+	const double ACCELERATION = 10.0f;
+	const double GRAVITY = 9.8f;
 
 	if (running) {
 		max_speed = 100.0f;
@@ -175,9 +175,9 @@ void Player::moveGod() {
 	else {
 		max_speed = 10.0f;
 	}
-	float velocity_distance = glm::distance(glm::vec3(0.0f), velocity);
-	if (direction != glm::vec3(0.0f)) {
-		if (velocity == glm::vec3(0.0f)) {
+	double velocity_distance = glm::distance(glm::dvec3(0.0f), velocity);
+	if (direction != glm::dvec3(0.0f)) {
+		if (velocity == glm::dvec3(0.0f)) {
 			velocity = direction * INITIAL_SPEED;
 		}
 		else {
@@ -188,17 +188,17 @@ void Player::moveGod() {
 	else {
 		velocity = glm::vec3(0.0f);
 	}
-	velocity_distance = glm::distance(glm::vec3(0.0f), velocity);
+	velocity_distance = glm::distance(glm::dvec3(0.0f), velocity);
 	if (velocity_distance > max_speed) {
 		velocity = glm::normalize(velocity) * max_speed;
 	}
 }
 
 void Player::moveGhost() {
-	const float INITIAL_SPEED = 5.0f;
-	const float INITIAL_JUMP = 10.0f;
-	const float ACCELERATION = 10.0f;
-	const float GRAVITY = 9.8f;
+	const double INITIAL_SPEED = 5.0f;
+	const double INITIAL_JUMP = 10.0f;
+	const double ACCELERATION = 10.0f;
+	const double GRAVITY = 9.8f;
 
 	if (running) {
 		max_speed = 100.0f;
@@ -206,9 +206,9 @@ void Player::moveGhost() {
 	else {
 		max_speed = 10.0f;
 	}
-	float velocity_distance = glm::distance(glm::vec3(0.0f), velocity);
-	if (direction != glm::vec3(0.0f)) {
-		if (velocity == glm::vec3(0.0f)) {
+	double velocity_distance = glm::distance(glm::dvec3(0.0f), velocity);
+	if (direction != glm::dvec3(0.0f)) {
+		if (velocity == glm::dvec3(0.0f)) {
 			velocity = direction * INITIAL_SPEED;
 		}
 		else {
@@ -219,7 +219,7 @@ void Player::moveGhost() {
 	else {
 		velocity = glm::vec3(0.0f);
 	}
-	velocity_distance = glm::distance(glm::vec3(0.0f), velocity);
+	velocity_distance = glm::distance(glm::dvec3(0.0f), velocity);
 	if (velocity_distance > max_speed) {
 		velocity = glm::normalize(velocity) * max_speed;
 	}

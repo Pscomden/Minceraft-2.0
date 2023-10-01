@@ -25,4 +25,5 @@ namespace BlockTypes {
 	BlockAttribute getBlockType(int id);
 	int numBlocks();
 	int nameToID(std::string name);
+	bool isTrans(int id);
 }

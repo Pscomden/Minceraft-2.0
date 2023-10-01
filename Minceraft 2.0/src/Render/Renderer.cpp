@@ -12,12 +12,12 @@ namespace Renderer {
 		Shaders::worldShader()->setVec3("cameraPos", Camera::getPosition());
 		
 		Atlas::getAtlas()->Use();
-		ChunkRenderer::render(World::getPlayer()->getPos());
+		ChunkRenderer::render(Camera::getPosition());
 		
 		Shaders::useBasic();
 		Shaders::basicShader()->setMat4("MVP", matrix);
 		EntityRenderer::render();
-
+		
 		Shaders::useBasic();
 		glm::mat4 ortho_matrix = glm::ortho(0.0f, (float)Window::getSize().x, (float)Window::getSize().y, 0.0f);
 		Shaders::basicShader()->setMat4("MVP", ortho_matrix);

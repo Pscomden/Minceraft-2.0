@@ -19,14 +19,14 @@ namespace World {
 		/*horizontal_range = 50;
 		vertical_range = 8;
 		setLimit(glm::ivec3(-5, -2, -5), glm::ivec3(5, 2, 5));*/
-		horizontal_range = 15;
-		vertical_range = 5;
-		setLimit(glm::ivec3(-100, -100, -100), glm::ivec3(100, 100, 100));
+		horizontal_range = 9;
+		vertical_range = 9;
+		setLimit(glm::ivec3(-100000, -100000, -100000), glm::ivec3(100000, 100000, 100000));
 		seed = 10;
 		World::world_directory = world_directory;
 		cubic_chunks = true;
 		// TODO: change to load player
-		player = std::shared_ptr<Player>(new Player(glm::vec3(0.0f, 70.0f, 0.0f)));
+		player = std::shared_ptr<Player>(new Player(glm::vec3(16.0f, 16.0f, 16.0f)));
 		entities.push_back(player);
 		//entities.push_back(std::shared_ptr<Entity>(new Entity(glm::vec3(0.0f, 70.0f, 0.0f))));
 		ChunkManager::setRange(horizontal_range, vertical_range);
@@ -34,14 +34,14 @@ namespace World {
 		ChunkManager::setWorldDirectory(world_directory);
 		ChunkManager::setCubicChunks(cubic_chunks);
 		ChunkMeshBuilder::setChunks(ChunkManager::getChunks());
-		Camera::setPosition(player->getPos() + glm::vec3(0.0f, 0.5f, 0.0f));
+		Camera::setPosition(player->getPos() + glm::dvec3(0.0, 0.5, 0.0));
 	}
 
 	void exit() {
 		ChunkManager::flushChunks();
 	}
 
-	void update(float delta_time) {
+	void update(double delta_time) {
 		for (auto& entity : entities) {
 			switch (entity->getType()) {
 			case Entity::Type::NONE:

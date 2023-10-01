@@ -34,5 +34,5 @@ void main()
     float alpha = 1 - fogFactor;
 
     FragColor.rgb *= vertexIn.light;
-    FragColor = vec4(FragColor.rgb, FragColor.a * alpha);
+    FragColor.a *= alpha;
 }
