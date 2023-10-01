@@ -61,7 +61,7 @@ namespace ChunkRenderer {
 			}
 			glm::ivec3 start = chunk.second->pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
 			glm::ivec3 end = start + glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
-			if (chunk.second->state != Chunk::State::DELETING && frustum.IsBoxVisible(start, end) && chunk.second->pos == glm::ivec3(0)) {
+			if (chunk.second->state != Chunk::State::DELETING && frustum.IsBoxVisible(start, end)) {
 				Shaders::worldShader()->setIvec3("chunk_pos", chunk.second->pos);
 				chunk.second->mesh.render();
 				chunk.second->trans_mesh.render();
