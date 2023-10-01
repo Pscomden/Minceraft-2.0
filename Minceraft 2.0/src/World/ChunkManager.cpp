@@ -299,11 +299,14 @@ namespace ChunkManager {
 		cur_tick++;
 		int jobs = pool.numJobs();
 		if (jobs > 0) {
-			//Console::num("Num jobs:", jobs);
+			Console::num("Num jobs:", jobs);
 		}
 		if (!is_update_tick) {
 			return;
 		}
+		
+		auto start_time = std::chrono::high_resolution_clock::now();
+
 		// see if out of chunk, get empty/far chunks
 		glm::ivec3 chunk_pos = posToChunk(player_pos);
 		static glm::ivec3 old_pos = chunk_pos;
@@ -333,6 +336,11 @@ namespace ChunkManager {
 		if (update_func == 4) {
 			update_func = 0;
 		}
+
+		auto end_time = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
+		auto delta = (double)((duration.count()) / 1000000.0);
+		//std::cout << std::fixed << delta << "\n";
 	}
 
 	void setRange(int horizontal_range, int vertical_range) {

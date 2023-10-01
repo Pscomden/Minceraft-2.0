@@ -22,6 +22,8 @@ namespace ChunkRenderer {
 		Shaders::worldShader()->setFloat("fogStart", fogStart);
 		Shaders::worldShader()->setFloat("fogEnd", fogEnd);
 
+		Frustum frustum = Frustum(Camera::getMatrix());
+
 		static auto old_chunk_pos = glm::ivec3(0);
 		static int old_num_chunks = 0;
 		glm::ivec3 chunk_pos = ChunkManager::posToChunk(glm::round(cam));
@@ -50,18 +52,23 @@ namespace ChunkRenderer {
 		}
 
 		is_rendering = true;
+		int render_count = 0;
 		for (auto& chunk : render_order) {
 			if (chunk.second == nullptr) {
 				std::cout << "FUCKFUCKFUCK " << chunk.second->pos.x << " " << chunk.second->pos.z << "\n";
 				//assert(false);
 				continue;
 			}
-			if (chunk.second->state != Chunk::State::DELETING) {
+			glm::ivec3 start = chunk.second->pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
+			glm::ivec3 end = start + glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
+			if (chunk.second->state != Chunk::State::DELETING && frustum.IsBoxVisible(start, end) && chunk.second->pos == glm::ivec3(0)) {
 				Shaders::worldShader()->setIvec3("chunk_pos", chunk.second->pos);
 				chunk.second->mesh.render();
 				chunk.second->trans_mesh.render();
+				render_count++;
 			}
 		}
+		// std::cout << "Total: " << chunks->size() << " Rendered: " << render_count << "\n";
 		//for (auto& chunk : *chunks) {
 		//	if (chunk.second == nullptr) {
 		//		std::cout << "FUCKFUCKFUCK " << chunk.first.x << " " << chunk.first.z << "\n";

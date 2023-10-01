@@ -8,7 +8,7 @@ namespace pc {
 	constexpr short c_height = 32; // y
 	constexpr short c_width = 32; // z
 	// -x, x, -y, y, -z, z
-	enum class CardinalDirection {
+	enum class CardinalDirection : int {
 		LEFT, RIGHT, DOWN, UP, FORWARD, BACKWARD
 	};
 }
