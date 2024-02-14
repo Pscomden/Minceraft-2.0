@@ -243,7 +243,8 @@ namespace ChunkManager {
 		empty_chunks.clear();
 		std::vector<float> distances;
 		for (pos.x = start.x; pos.x <= end.x; pos.x++) {
-			for (pos.y = start.y; pos.y <= end.y; pos.y++) {
+			//for (pos.y = start.y; pos.y <= end.y; pos.y++) {
+			pos.y = 0;
 				for (pos.z = start.z; pos.z <= end.z; pos.z++) {
 					if (inWorldLimit(pos) && !chunkExists(pos)) {
 						float distance = glm::distance(center_pos, (glm::vec3)(pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width) + glm::ivec3(pc::c_length, pc::c_height, pc::c_width) / 2));
@@ -253,7 +254,7 @@ namespace ChunkManager {
 						}
 					}
 				}
-			}
+			//}
 		}
 		for (int i = empty_chunks.size() - 1; i >= 0; i--) {
 			float min = distances[i];

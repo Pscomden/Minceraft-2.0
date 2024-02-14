@@ -111,6 +111,14 @@ namespace WorldBuilder {
                     if (chunk->blocks[x][y][z].id == 0 && absolute_height >= -50 && absolute_height <= 0) {
                         chunk->blocks[x][y][z].id = 6;
                     }
+                    // test boundaries
+                    if ((x == 0 && y == 0) || (x == 0 && z == 0) || (y == 0 && z == 0) ||
+                        (x == 0 && y == 31) || (x == 0 && z == 31) || (y == 0 && z == 31) || 
+                        (x == 31 && y == 0) || (x == 31 && z == 0) || (y == 31 && z == 0) ||
+                        (x == 31 && y == 31) || (x == 31 && z == 31) || (y == 31 && z == 31))
+                    {
+                        //chunk->blocks[x][y][z].id = 9;
+                    }
                 }
             }
         }

@@ -54,3 +54,19 @@ harvest 1
 tool shovel
 toughness 1
 ;
+lava
+id 8
+drops lava
+solid 0
+harvest 1
+tool shovel
+toughness 1
+;
+wood
+id 9
+drops wood
+solid 1
+harvest 1
+tool shovel
+toughness 1
+;

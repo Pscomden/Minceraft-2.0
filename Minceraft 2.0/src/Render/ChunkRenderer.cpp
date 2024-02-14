@@ -17,7 +17,7 @@ namespace ChunkRenderer {
 		float fogStart = (World::getRange().x * pc::c_length) / 2 - (pc::c_length);
 		float fogEnd = (World::getRange().x * pc::c_length) / 2;
 
-		//fogEnd = 100000000.0f;
+		fogEnd = 100000000.0f;
 
 		Shaders::worldShader()->setFloat("fogStart", fogStart);
 		Shaders::worldShader()->setFloat("fogEnd", fogEnd);
@@ -51,6 +51,9 @@ namespace ChunkRenderer {
 			}
 		}
 
+		glDepthMask(true);
+		glDisable(GL_BLEND);
+
 		is_rendering = true;
 		int render_count = 0;
 		for (auto& chunk : render_order) {
@@ -64,10 +67,27 @@ namespace ChunkRenderer {
 			if (chunk.second->state != Chunk::State::DELETING && frustum.IsBoxVisible(start, end)) {
 				Shaders::worldShader()->setIvec3("chunk_pos", chunk.second->pos);
 				chunk.second->mesh.render();
-				chunk.second->trans_mesh.render();
+				//chunk.second->trans_mesh.render();
 				render_count++;
 			}
 		}
+
+		glDepthMask(false);
+		glEnable(GL_BLEND);
+
+		for (auto& chunk : render_order) {
+			glm::ivec3 start = chunk.second->pos * glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
+			glm::ivec3 end = start + glm::ivec3(pc::c_length, pc::c_height, pc::c_width);
+			if (chunk.second->state != Chunk::State::DELETING && frustum.IsBoxVisible(start, end)) {
+				Shaders::worldShader()->setIvec3("chunk_pos", chunk.second->pos);
+				chunk.second->trans_mesh.render();
+				render_count++;
+			}
+
+		}
+
+		glDepthMask(true);
+		glEnable(GL_BLEND);
 		// std::cout << "Total: " << chunks->size() << " Rendered: " << render_count << "\n";
 		//for (auto& chunk : *chunks) {
 		//	if (chunk.second == nullptr) {
